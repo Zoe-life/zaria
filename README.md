@@ -384,4 +384,4 @@ Contributions are welcome! Please read `CONTRIBUTING.md` (coming soon) for guide
 
 ## License
 
-[MIT](./LICENSE) — © 2024 Zoe-life contributors.
+[MIT](./LICENSE) — © 2026 Zoe-life contributors.
