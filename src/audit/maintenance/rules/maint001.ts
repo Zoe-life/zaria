@@ -67,13 +67,7 @@ export const maint001: Rule = {
     for (const parsedFile of context.files) {
       const bodies = extractFunctionBodies(parsedFile.content);
 
-      // Track whether we have already flagged this file to avoid duplicates
-      // when multiple functions in the same file exceed the threshold.
-      let fileFlagged = false;
-
       for (const body of bodies) {
-        if (fileFlagged) break;
-
         const complexity = 1 + countBranchPoints(body);
         if (complexity > COMPLEXITY_THRESHOLD) {
           findings.push({
@@ -84,7 +78,6 @@ export const maint001: Rule = {
             recommendation:
               'Refactor the function by extracting helper functions, replacing nested conditionals with early returns (guard clauses), or applying the Strategy / Command pattern to eliminate branching.',
           });
-          fileFlagged = true;
         }
       }
     }

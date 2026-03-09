@@ -162,6 +162,54 @@ describe('extractFunctionBodies', () => {
     expect(bodies[0]).toContain('doFirst');
     expect(bodies[1]).toContain('doSecond');
   });
+
+  it('extracts non-async method shorthand bodies from a class', () => {
+    const content = [
+      'class UserService {',
+      '  find(id) {',
+      '    return this.repo.findById(id);',
+      '  }',
+      '  save(entity) {',
+      '    return this.repo.save(entity);',
+      '  }',
+      '}',
+    ].join('\n');
+    const bodies = extractFunctionBodies(content);
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0]).toContain('findById');
+    expect(bodies[1]).toContain('save');
+  });
+
+  it('extracts a non-async method shorthand body with a TypeScript return type annotation', () => {
+    const content = [
+      'class Processor {',
+      '  process(input: string): boolean {',
+      '    return input.length > 0;',
+      '  }',
+      '}',
+    ].join('\n');
+    const bodies = extractFunctionBodies(content);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toContain('input.length');
+  });
+
+  it('does not extract control-flow blocks as function bodies', () => {
+    const content = [
+      'function main() {',
+      '  if (cond) {',
+      '    doSomething();',
+      '  }',
+      '  for (let i = 0; i < 10; i++) {',
+      '    loop();',
+      '  }',
+      '}',
+    ].join('\n');
+    const bodies = extractFunctionBodies(content);
+    // Only main() should be extracted — if/for blocks must not be counted separately
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toContain('doSomething');
+    expect(bodies[0]).toContain('loop');
+  });
 });
 
 describe('FUNCTION_START regex', () => {
@@ -184,5 +232,29 @@ describe('FUNCTION_START regex', () => {
   it('matches a standalone arrow expression (no brace)', () => {
     // The regex matches — the extractor's pendingFunction logic handles skipping
     expect(FUNCTION_START.test('(a, b) => a + b')).toBe(true);
+  });
+
+  it('matches a non-async method shorthand (class/object method)', () => {
+    expect(FUNCTION_START.test('  getValue() {')).toBe(true);
+  });
+
+  it('matches a non-async method shorthand with parameters', () => {
+    expect(FUNCTION_START.test('  handleRequest(req, res) {')).toBe(true);
+  });
+
+  it('matches a non-async method shorthand with a TypeScript return type annotation', () => {
+    expect(FUNCTION_START.test('  process(input: Record<string, unknown>): string {')).toBe(true);
+  });
+
+  it('matches an async method shorthand with a TypeScript return type annotation', () => {
+    expect(FUNCTION_START.test('  async load(id: string): Promise<void> {')).toBe(true);
+  });
+
+  it('does NOT match control-flow keywords as method shorthands', () => {
+    expect(FUNCTION_START.test('if (condition) {')).toBe(false);
+    expect(FUNCTION_START.test('for (let i = 0; i < n; i++) {')).toBe(false);
+    expect(FUNCTION_START.test('while (running) {')).toBe(false);
+    expect(FUNCTION_START.test('switch (x) {')).toBe(false);
+    expect(FUNCTION_START.test('catch (err) {')).toBe(false);
   });
 });

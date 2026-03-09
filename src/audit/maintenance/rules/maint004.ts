@@ -103,7 +103,11 @@ export const maint004: Rule = {
     for (const f of testFiles) {
       const name = basename(f.sourceFile.path);
       if (TEST_FILE_NAME_RE.test(name)) {
+        // Name-based test file: strip the `.test.` / `.spec.` suffix.
         coveredBases.add(testedBasename(name));
+      } else {
+        // Directory-based test file (e.g. `tests/user.ts`): strip the extension.
+        coveredBases.add(sourceBasename(name));
       }
     }
 

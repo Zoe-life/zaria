@@ -118,8 +118,8 @@ function branchy(x: Record<string, unknown>): string {
     expect(findings[0].recommendation).toBeTruthy();
   });
 
-  it('emits at most one finding per file', () => {
-    // Two complex functions in the same file — should produce ≤ 1 finding per file
+  it('emits one finding per complex function body', () => {
+    // Two complex functions in the same file — should produce one finding each
     const content = `
 function a(x: Record<string, unknown>): string {
   if (!x) return 'a';
@@ -152,6 +152,33 @@ function b(x: Record<string, unknown>): string {
   return 'z';
 }`;
     const findings = maint001.check(ctxWithContent(content));
-    expect(findings).toHaveLength(1);
+    expect(findings).toHaveLength(2);
+    findings.forEach((f) => expect(f.ruleId).toBe('MAINT001'));
+  });
+
+  it('detects high complexity in a non-async class method shorthand', () => {
+    // Previously missed: method shorthand `foo() {` was not matched by FUNCTION_START
+    const content = `
+class Processor {
+  process(input: Record<string, unknown>): string {
+    if (!input) return 'empty';
+    if (typeof input.a !== 'string') return 'bad a';
+    if (typeof input.b !== 'number') return 'bad b';
+    if (typeof input.c !== 'boolean') return 'bad c';
+    if (input.a.length === 0) return 'empty a';
+    if (input.b < 0 || input.b > 100) return 'out of range';
+    if (input.c && input.a === 'admin') return 'admin';
+    if (!input.c && input.b > 50) return 'elevated';
+    for (const k of Object.keys(input)) {
+      if (k.startsWith('_')) continue;
+      if (typeof input[k] === 'undefined') return 'missing';
+    }
+    return 'ok';
+  }
+}`;
+    const findings = maint001.check(ctxWithContent(content));
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings[0].ruleId).toBe('MAINT001');
+    expect(findings[0].message).toMatch(/cyclomatic complexity/i);
   });
 });

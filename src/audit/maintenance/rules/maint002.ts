@@ -124,8 +124,9 @@ export const maint002: Rule = {
             });
             flaggedFiles.add(path);
           }
-          // No need to continue scanning this file once it is flagged.
-          break;
+          // Continue scanning so remaining blocks are recorded in blockToFirstFile
+          // for cross-file duplicate detection in subsequent files.
+          continue;
         }
         seenInThisFile.add(block);
 

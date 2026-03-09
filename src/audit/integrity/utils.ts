@@ -17,10 +17,23 @@
  * 1. Named function declaration:    `function foo(` / `async function foo(`
  * 2. const/let/var arrow or expr:   `const foo = (` / `const foo = async (`
  * 3. Arrow function (standalone):   `(a, b) =>` (matches before the `=>`)
- * 4. Method shorthand (class/obj):  `async foo(params) {`
+ * 4. Async method shorthand:        `async foo(params) {` / `async foo(): T {`
+ * 5. Non-async method shorthand:    `foo(params) {` / `foo(): T {` (class/object
+ *    methods). Control-flow keywords that share this shape (`if`, `for`, `while`,
+ *    `switch`, `catch`) are excluded via a negative lookahead.
+ *
+ * Alts 4 & 5 each accept an optional TypeScript return-type annotation
+ * (`: TypeName`) between the closing `)` and the opening `{`.
+ *
+ * Each `|`-separated segment of the regex corresponds to one numbered form:
+ *   1. \b(?:async\s+)?function\s+\w+\s*\(
+ *   2. (?:const|let|var)\s+\w+\s*=\s*(?:async\s*)?\(
+ *   3. (?:async\s*)?\([^)]*\)\s*=>
+ *   4. \basync\s+\w+\s*\([^)]*\)\s*(?::[^{]*)?\{
+ *   5. \b(?!if\b|for\b|while\b|switch\b|catch\b)\w+\s*\([^)]*\)\s*(?::[^{]*)?\{
  */
 export const FUNCTION_START =
-  /\b(?:async\s+)?function\s+\w+\s*\(|(?:const|let|var)\s+\w+\s*=\s*(?:async\s*)?\(|(?:async\s*)?\([^)]*\)\s*=>|\basync\s+\w+\s*\([^)]*\)\s*\{/;
+  /\b(?:async\s+)?function\s+\w+\s*\(|(?:const|let|var)\s+\w+\s*=\s*(?:async\s*)?\(|(?:async\s*)?\([^)]*\)\s*=>|\basync\s+\w+\s*\([^)]*\)\s*(?::[^{]*)?\{|\b(?!if\b|for\b|while\b|switch\b|catch\b)\w+\s*\([^)]*\)\s*(?::[^{]*)?\{/;
 
 // ---------------------------------------------------------------------------
 // Body extractor
