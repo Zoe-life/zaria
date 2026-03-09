@@ -1,1 +1,387 @@
-# zaria
+# Zaria — Enterprise-Grade Codebase Audit CLI
+
+> **Zaria** is an open-source, enterprise-grade CLI tool that audits web application codebases across five critical dimensions: Performance, Architecture, Scalability & Observability, Data Integrity & Race Conditions, and Long-Term Maintenance Costs. It is designed to serve developers, small organisations, and large enterprises alike — with optional integration into SRE tooling for deeper, runtime-informed analysis.
+
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Key Features](#key-features)
+3. [Audit Dimensions](#audit-dimensions)
+4. [Proposed Tech Stacks](#proposed-tech-stacks)
+5. [Quick Start](#quick-start)
+6. [CLI Usage](#cli-usage)
+7. [Configuration](#configuration)
+8. [SRE Tool Integration (Optional)](#sre-tool-integration-optional)
+9. [Report Formats](#report-formats)
+10. [Architecture Overview](#architecture-overview)
+11. [Roadmap](#roadmap)
+12. [Contributing](#contributing)
+13. [License](#license)
+
+---
+
+## Overview
+
+Modern software teams move fast. Technical debt accumulates, architectural decisions drift, and performance regressions go unnoticed until they cost the business. **Zaria** brings automated, structured, and actionable audits directly into your development workflow — from a single `zaria audit` command.
+
+Zaria analyses static code, project structure, dependency graphs, and configuration files. When connected to SRE tooling (Prometheus, Datadog, Grafana, PagerDuty, etc.), it enriches its analysis with real runtime telemetry, giving organisations the most complete picture of their codebase health.
+
+---
+
+## Key Features
+
+- **Five-dimensional audit engine** covering Performance, Architecture, Scalability & Observability, Data Integrity & Race Conditions, and Long-Term Maintenance.
+- **Zero-config static analysis** — works out of the box on any web application codebase.
+- **Optional SRE integration** — connect to Prometheus, Datadog, Grafana, Loki, New Relic, or custom log sources for runtime-informed scoring.
+- **Severity-ranked findings** — every finding is classified as `critical`, `high`, `medium`, or `low` with an actionable recommendation.
+- **Multiple report formats** — interactive terminal output (colourised, tabular), JSON, HTML, Markdown, and SARIF (for CI/CD integration).
+- **CI/CD ready** — non-zero exit codes on threshold breaches, configurable quality gates.
+- **Language support** — initial support for JavaScript, TypeScript, Python, and Go web application codebases; expanding to mobile and desktop.
+- **Plugin architecture** — extend Zaria with custom audit rules for your organisation's standards.
+- **Enterprise features** — role-based access for shared dashboards, audit history, and compliance report exports.
+
+---
+
+## Audit Dimensions
+
+### 1. Performance
+- Identifies N+1 query patterns, missing database indices, and synchronous blocking in async contexts.
+- Detects bundle size issues, unoptimised assets, and missing caching strategies.
+- Flags memory leak patterns (event listeners not cleaned up, closure captures, etc.).
+- Analyses algorithmic complexity hotspots.
+
+### 2. Architecture
+- Maps actual dependency relationships and flags circular dependencies.
+- Evaluates adherence to layered/hexagonal/clean architecture principles.
+- Detects tight coupling, missing abstraction layers, and god objects/modules.
+- Checks separation of concerns between business logic, data access, and presentation layers.
+- Reviews API design consistency (REST, GraphQL, gRPC conventions).
+
+### 3. Scalability & Observability
+- Flags stateful patterns that prevent horizontal scaling.
+- Identifies missing or insufficient distributed tracing, metrics, and structured logging.
+- Reviews message queue and async job patterns for durability.
+- Evaluates health-check endpoints and readiness/liveness probes.
+- Checks for hard-coded limits, missing pagination, and unbounded queries.
+
+### 4. Data Integrity & Race Conditions
+- Detects unguarded shared-state mutations in concurrent contexts.
+- Reviews transaction boundaries and missing rollback logic.
+- Flags optimistic locking omissions and TOCTOU (Time-Of-Check-Time-Of-Use) vulnerabilities.
+- Checks input validation and sanitisation completeness.
+- Analyses idempotency of critical write operations.
+
+### 5. Long-Term Maintenance Costs
+- Measures cyclomatic complexity, cognitive complexity, and code duplication.
+- Audits test coverage distribution and the quality of test types (unit, integration, E2E).
+- Flags deprecated dependencies, known CVEs, and outdated language runtimes.
+- Reviews inline documentation completeness and consistency.
+- Estimates onboarding friction from missing architectural decision records (ADRs).
+
+---
+
+## Proposed Tech Stacks
+
+Two primary tech stacks are being considered for building Zaria. **Your input is needed to decide which to proceed with.**
+
+---
+
+### Option A — Node.js / TypeScript ⭐ (Recommended)
+
+| Concern | Choice | Rationale |
+|---|---|---|
+| Language | TypeScript 5.x | Type safety, excellent ecosystem, native JS/TS AST tooling |
+| CLI framework | [Commander.js](https://github.com/tj/commander.js) + [Ink](https://github.com/vadimdemedes/ink) | Commander for argument parsing; Ink (React-for-CLI) for rich interactive terminal UI |
+| Static analysis | [ts-morph](https://ts-morph.com/), [ESLint API](https://eslint.org/docs/developer-guide/nodejs-api), [Babel parser](https://babeljs.io/docs/babel-parser) | Full AST access for JS/TS codebases |
+| Dependency graph | [madge](https://github.com/pahen/madge) | Circular dependency and module graph analysis |
+| SRE HTTP client | [Axios](https://axios-http.com/) | Prometheus, Datadog, Grafana API calls |
+| Config parsing | [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) | Zero-config with `.zariarc`, `zaria.config.ts` support |
+| Report generation | [chalk](https://github.com/chalk/chalk), [cli-table3](https://github.com/cli-table/cli-table3), [PDFKit](https://pdfkit.org/) | Terminal, JSON, HTML, PDF output |
+| Testing | [Vitest](https://vitest.dev/) | Fast, TypeScript-native test runner |
+| Distribution | [pkg](https://github.com/vercel/pkg) or [npm](https://npmjs.com) | Single binary or `npx zaria` |
+| Plugin system | ESM dynamic `import()` with a typed plugin interface | Extensible without forking |
+
+**Pros:** Best-in-class JS/TS AST tooling (first-class citizen for the primary target language), vast npm ecosystem, easy for developers to contribute, straightforward CI integration via `npx`.
+
+**Cons:** Single-threaded by default (worker threads needed for parallelism); runtime dependency (Node.js) unless compiled to binary.
+
+---
+
+### Option B — Go
+
+| Concern | Choice | Rationale |
+|---|---|---|
+| Language | Go 1.22+ | Compiled, fast startup, excellent concurrency via goroutines |
+| CLI framework | [Cobra](https://github.com/spf13/cobra) + [Bubbletea](https://github.com/charmbracelet/bubbletea) | Industry-standard CLI structure; Bubbletea for TUI |
+| Static analysis | [go/ast](https://pkg.go.dev/go/ast), [tree-sitter Go bindings](https://github.com/smacker/go-tree-sitter) | Multi-language parsing via tree-sitter |
+| SRE HTTP client | Standard `net/http` | Built-in, zero dependency |
+| Config parsing | [Viper](https://github.com/spf13/viper) | `.zariarc`, YAML, TOML, environment variable support |
+| Report generation | [lipgloss](https://github.com/charmbracelet/lipgloss), `encoding/json`, `html/template` | Styled terminal output, structured reports |
+| Testing | Built-in `testing` package + [testify](https://github.com/stretchr/testify) | Standard Go testing |
+| Distribution | [goreleaser](https://goreleaser.com/) | Single binary for Linux, macOS, Windows — no runtime needed |
+| Plugin system | Go plugins (`.so`) or gRPC-based plugin host | Native or process-isolated plugins |
+
+**Pros:** Single binary with zero runtime dependency, excellent concurrency model (ideal for parallel audit checks), great cross-platform distribution.
+
+**Cons:** Less mature JS/TS AST ecosystem (the primary target language class), steeper contributor barrier, tree-sitter bindings add complexity.
+
+---
+
+### Decision Required
+
+> **Please review the two options above and indicate which tech stack you'd like to proceed with.** The plan and all implementation steps in `PLAN.md` are written in a tech-stack-agnostic way initially, with concrete tooling filled in once a stack is confirmed.
+
+---
+
+## Quick Start
+
+> _The following commands will be available once the CLI is built. This section documents the intended developer experience._
+
+```bash
+# Install globally via npm (Option A)
+npm install -g zaria
+
+# Or run without installing
+npx zaria audit ./my-project
+
+# Or install the Go binary (Option B)
+brew install zoe-life/tap/zaria    # macOS
+curl -sSL https://zaria.dev/install.sh | sh   # Linux / WSL
+```
+
+---
+
+## CLI Usage
+
+```
+zaria <command> [options]
+
+Commands:
+  audit [path]          Run a full audit on the given project path (default: current directory)
+  audit:perf [path]     Run only the Performance audit
+  audit:arch [path]     Run only the Architecture audit
+  audit:scale [path]    Run only the Scalability & Observability audit
+  audit:integrity [path] Run only the Data Integrity & Race Conditions audit
+  audit:maint [path]    Run only the Long-Term Maintenance audit
+  report                Generate a report from the last audit run
+  config init           Scaffold a .zariarc config file
+  config validate       Validate the current .zariarc file
+  sre connect           Interactively configure an SRE tool connection
+  sre test              Test connectivity to configured SRE tools
+  plugin list           List installed plugins
+  plugin add <name>     Install a Zaria plugin
+  plugin remove <name>  Remove a Zaria plugin
+
+Options:
+  -p, --path <path>       Path to project root (default: current directory)
+  -o, --output <format>   Output format: terminal|json|html|markdown|sarif (default: terminal)
+  -f, --file <path>       Write report to file instead of stdout
+  -t, --threshold <score> Fail with exit code 1 if overall score is below this value (0-100)
+  --no-sre                Disable SRE data fetching even if configured
+  --only <dimensions>     Comma-separated list of audit dimensions to run
+  --skip <dimensions>     Comma-separated list of audit dimensions to skip
+  --config <path>         Path to a custom config file
+  -v, --verbose           Show verbose output
+  --version               Show version number
+  -h, --help              Show help
+```
+
+### Examples
+
+```bash
+# Full audit of current directory, terminal output
+zaria audit
+
+# Audit a specific project, output as JSON to a file
+zaria audit ./api-service -o json -f audit-report.json
+
+# CI/CD: fail the pipeline if overall score drops below 70
+zaria audit --threshold 70
+
+# Run only architecture and maintenance audits
+zaria audit --only arch,maint
+
+# Full audit with SRE data from connected Prometheus instance
+zaria audit --sre
+
+# Initialise config for a project
+zaria config init
+```
+
+---
+
+## Configuration
+
+Zaria supports zero-config usage out of the box. For fine-grained control, create a `.zariarc` (JSON/YAML) or `zaria.config.ts` file in your project root.
+
+```yaml
+# .zariarc.yml — example configuration
+version: 1
+
+project:
+  name: "My Web API"
+  type: web          # web | mobile | desktop | library
+  language: typescript
+
+audit:
+  dimensions:
+    - performance
+    - architecture
+    - scalability
+    - integrity
+    - maintenance
+  thresholds:
+    overall: 75
+    performance: 70
+    architecture: 80
+
+ignore:
+  paths:
+    - node_modules
+    - dist
+    - .next
+    - coverage
+  rules:
+    - PERF001   # Disable a specific rule by ID
+
+plugins:
+  - zaria-plugin-nextjs
+  - zaria-plugin-prisma
+
+sre:
+  enabled: false   # Set to true and configure below to enable
+  # providers:
+  #   - type: prometheus
+  #     url: https://prometheus.internal.example.com
+  #     auth:
+  #       type: bearer
+  #       token: ${PROMETHEUS_TOKEN}
+  #   - type: datadog
+  #     apiKey: ${DATADOG_API_KEY}
+  #     appKey: ${DATADOG_APP_KEY}
+
+output:
+  format: terminal
+  colors: true
+  detail: standard   # minimal | standard | verbose
+```
+
+---
+
+## SRE Tool Integration (Optional)
+
+Zaria can optionally connect to your organisation's SRE tooling to enrich static analysis with runtime data. This is **entirely opt-in** and Zaria works fully without it.
+
+### Supported Providers (Planned)
+
+| Provider | Data Available |
+|---|---|
+| **Prometheus** | Error rates, latency percentiles, resource utilisation, alert firing history |
+| **Datadog** | APM traces, log anomalies, infrastructure metrics, SLO compliance |
+| **Grafana / Loki** | Log stream queries, dashboard alert history |
+| **New Relic** | Transaction traces, error analytics, deployment markers |
+| **PagerDuty** | Incident history, MTTR, on-call load |
+| **Custom HTTP** | Any provider exposing a JSON API via a configurable adapter |
+
+### What SRE Data Adds
+
+- Correlates static findings with real error rates (e.g., flagging a code path as `critical` if it is both complex _and_ responsible for 40% of production errors).
+- Provides MTTR and incident frequency context for maintenance scoring.
+- Validates that observability gaps found in code actually result in blind spots at runtime.
+- Offers trend data to distinguish new regressions from long-standing issues.
+
+### Security & Privacy
+
+- Credentials are stored in the system keychain (macOS Keychain, Linux `libsecret`, Windows Credential Manager) — never in plain text files.
+- All SRE queries are read-only.
+- An audit log of every external query made is written locally.
+
+---
+
+## Report Formats
+
+| Format | Use Case |
+|---|---|
+| **Terminal** | Interactive developer workflow — colourised, summary + details |
+| **JSON** | Machine-readable output for custom dashboards or CI artefacts |
+| **HTML** | Shareable self-contained report for stakeholders |
+| **Markdown** | GitHub/GitLab PR comment integration |
+| **SARIF** | GitHub Code Scanning, Azure DevOps, VS Code integration |
+| **PDF** _(planned)_ | Formal enterprise compliance reports |
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          Zaria CLI                               │
+│  ┌─────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
+│  │  CLI Parser │  │  Config      │  │  Plugin Loader        │  │
+│  │ (Commander/ │  │  Resolver    │  │  (ESM / gRPC)         │  │
+│  │  Cobra)     │  │ (cosmiconfig/│  │                       │  │
+│  └──────┬──────┘  │  Viper)      │  └───────────┬───────────┘  │
+│         │         └──────┬───────┘              │              │
+│         └────────────────┴──────────────────────┘              │
+│                          │                                       │
+│                   ┌──────▼──────┐                               │
+│                   │ Audit       │                               │
+│                   │ Orchestrator│                               │
+│                   └──────┬──────┘                               │
+│                          │                                       │
+│        ┌─────────────────┼──────────────────┐                  │
+│        │                 │                  │                   │
+│  ┌─────▼──────┐  ┌───────▼──────┐  ┌───────▼──────┐          │
+│  │  Static    │  │  SRE Data    │  │  Dependency  │          │
+│  │  Analyser  │  │  Fetcher     │  │  Graph       │          │
+│  │            │  │  (optional)  │  │  Analyser    │          │
+│  └─────┬──────┘  └───────┬──────┘  └───────┬──────┘          │
+│        │                 │                  │                   │
+│        └─────────────────┼──────────────────┘                  │
+│                          │                                       │
+│            ┌─────────────▼──────────────┐                      │
+│            │   Dimension Engines        │                      │
+│            │  ┌──────┐ ┌──────┐        │                      │
+│            │  │Perf  │ │Arch  │ ...    │                      │
+│            │  └──────┘ └──────┘        │                      │
+│            └─────────────┬──────────────┘                      │
+│                          │                                       │
+│                   ┌──────▼──────┐                               │
+│                   │  Scorer &   │                               │
+│                   │  Reporter   │                               │
+│                   └─────────────┘                               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Roadmap
+
+| Milestone | Target | Description |
+|---|---|---|
+| **v0.1** | Phase 1–3 | Core CLI skeleton, configuration, basic static analysis |
+| **v0.2** | Phase 4–6 | Full five-dimension audit engine for JS/TS web apps |
+| **v0.3** | Phase 7–8 | SRE integration, Prometheus + Datadog |
+| **v0.4** | Phase 9 | HTML, JSON, SARIF report output, CI quality gates |
+| **v0.5** | Phase 10 | Plugin architecture, public plugin registry |
+| **v1.0** | Phase 11 | Production-ready, documentation, distribution (npm + binary) |
+| **v1.x** | Phase 12+ | Python codebase support, mobile app auditing, enterprise dashboard |
+
+---
+
+## Contributing
+
+Contributions are welcome! Please read `CONTRIBUTING.md` (coming soon) for guidelines on:
+
+- Filing bug reports and feature requests
+- Writing and submitting audit rules as plugins
+- Code style and commit conventions
+- Running the test suite locally
+
+---
+
+## License
+
+[MIT](./LICENSE) — © 2024 Zoe-life contributors.
