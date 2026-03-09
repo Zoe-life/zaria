@@ -4,6 +4,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts'],
+    // ts-morph AST parsing is expensive; allow extra time under coverage instrumentation
+    testTimeout: 30000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json'],
