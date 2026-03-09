@@ -12,7 +12,7 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 |---|---|---|
 | 1 ✅ | Project Scaffolding & Tooling | Compilable, testable, linted skeleton |
 | 2 ✅ | CLI Framework & Command Structure | All commands parse and route correctly |
-| 3 | Configuration System | `.zariarc` / `zaria.config.ts` loading and validation |
+| 3 ✅ | Configuration System | `.zariarc` / `zaria.config.ts` loading and validation |
 | 4 | Static Analysis Foundation | AST parsing and file traversal pipeline |
 | 5 | Audit Engine — Performance | Performance dimension rules and scoring |
 | 6 | Audit Engine — Architecture | Architecture dimension rules and scoring |
@@ -151,47 +151,53 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 ---
 
-## Phase 3 — Configuration System
+## Phase 3 — Configuration System ✅
 
 **Goal:** Full config loading, merging, and validation pipeline.
 
 ### Tasks
 
-3.1. **Define the configuration schema**
-  - Create a TypeScript interface for the full config object (project, audit dimensions, thresholds, ignore lists, plugins, sre, output).
-  - Use a schema validation library (Zod).
+3.1. **Define the configuration schema** ✅
+  - `src/config/schema.ts` — Zod schema + TypeScript types covering all config sections.
+  - Supports project types: web, mobile, desktop, cli, library (any codebase kind).
+  - Dependencies: `zod@^3`.
 
-3.2. **Implement config file discovery**
-  - Use `cosmiconfig` to search for `.zariarc`, `.zariarc.json`, `.zariarc.yml`, `.zariarc.yaml`, `zaria.config.ts`, or `zaria` key in `package.json`.
+3.2. **Implement config file discovery** ✅
+  - `src/config/loader.ts` — `cosmiconfig` explorer searches for `.zariarc`, `.zariarc.json`, `.zariarc.yml`, `.zariarc.yaml`, `zaria.config.json`, or `zaria` key in `package.json`.
+  - `zaria.config.ts` deferred to a future phase (requires TypeScript loader).
 
-3.3. **Implement config merging**
-  - Priority order (highest to lowest): CLI flags → environment variables → config file → built-in defaults.
-  - Write a `mergeConfig()` function that produces a resolved, fully-typed config object.
+3.3. **Implement config merging** ✅
+  - `src/config/merge.ts` — `mergeConfig()` + `readEnvOverrides()`.
+  - Priority order (highest to lowest): CLI flags → `ZARIA_*` env vars → config file → built-in defaults.
+  - `src/config/defaults.ts` — centralised built-in default values.
 
-3.4. **Implement config validation**
-  - Validate types, required fields, and value ranges (e.g., thresholds must be 0–100).
-  - Validate that `ignore.rules` reference real rule IDs.
-  - Return structured validation errors with file location hints.
+3.4. **Implement config validation** ✅
+  - `src/config/validate.ts` — two-pass validation: Zod structural check + semantic check (`ignore.rules` vs. known IDs, empty dimensions list).
+  - Returns structured `ValidationError[]` with dot-separated paths and messages.
+  - `formatValidationResult()` renders ✅/❌ output for the terminal.
 
-3.5. **Implement `config init` fully**
-  - Copy the bundled `.zariarc.example.yml` into the project root.
-  - Detect the project type and language and pre-fill defaults.
+3.5. **Implement `config init` fully** ✅
+  - Copies bundled `.zariarc.example.yml` to the target directory.
+  - `src/config/detect.ts` — detects project type (web/mobile/desktop/cli/library) and language from file system artefacts.
+  - Protects against overwriting an existing file (requires `--force`).
 
-3.6. **Implement `config validate` fully**
-  - Load config and display validation results in a structured terminal format.
+3.6. **Implement `config validate` fully** ✅
+  - Loads the config with `cosmiconfig`, validates it, and prints a structured terminal report with file path.
+  - Exits with code 1 on validation failure.
 
-3.7. **Write config unit tests**
-  - Test config discovery (file found / not found).
-  - Test merging priority order.
-  - Test validation errors for invalid values.
-  - Test `config init` creates the expected file.
+3.7. **Write config unit tests** ✅
+  - `tests/unit/config/schema.test.ts` — 17 tests for all valid/invalid schema combinations.
+  - `tests/unit/config/validate.test.ts` — 16 tests: structural errors, semantic errors, format output.
+  - `tests/unit/config/merge.test.ts` — 26 tests: priority order, --only/--skip, env overrides.
+  - `tests/unit/config/loader.test.ts` — 9 tests: file discovery, package.json key, error propagation.
+  - Updated `tests/unit/cli/index.test.ts` — config init/validate tests updated for real async handlers.
 
-3.8. **Verify Phase 3**
-  - `zaria config init` creates `.zariarc.yml` in the working directory.
-  - `zaria config validate` reports "Config valid" for the generated file.
-  - `zaria config validate` reports specific errors for an invalid config fixture.
+3.8. **Verify Phase 3** ✅
+  - `zaria config init` creates `.zariarc.yml`, detects project type, and guards against overwrite.
+  - `zaria config validate` reports `✅ Config valid` for a well-formed file.
+  - `zaria config validate` reports `❌ … errors` with paths for an invalid file (e.g. `threshold: 999`).
+  - All 88 tests pass; `npm run lint && npm run build` both pass.
 
----
 
 ## Phase 4 — Static Analysis Foundation
 
