@@ -109,19 +109,24 @@ export const perf001: Rule = {
   check(context: AnalysisContext): Finding[] {
     const findings: Finding[] = [];
 
-    for (const parsedFile of context.files) {
-      const project = new Project({
-        useInMemoryFileSystem: false,
-        skipFileDependencyResolution: true,
-        compilerOptions: { allowJs: true, checkJs: false, noEmit: true, skipLibCheck: true },
-      });
+    // Create one shared project for all files to avoid N separate Project instances
+    const project = new Project({
+      useInMemoryFileSystem: false,
+      skipFileDependencyResolution: true,
+      compilerOptions: { allowJs: true, checkJs: false, noEmit: true, skipLibCheck: true },
+    });
 
-      let tsFile;
+    for (const parsedFile of context.files) {
       try {
-        tsFile = project.addSourceFileAtPath(parsedFile.sourceFile.path);
+        project.addSourceFileAtPath(parsedFile.sourceFile.path);
       } catch {
-        continue;
+        // skip unreadable files
       }
+    }
+
+    for (const parsedFile of context.files) {
+      const tsFile = project.getSourceFile(parsedFile.sourceFile.path);
+      if (!tsFile) continue;
 
       for (const node of tsFile.getDescendants()) {
         if (isOrmCall(node) && isInsideLoop(node)) {

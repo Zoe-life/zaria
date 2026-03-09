@@ -14,6 +14,7 @@
  */
 
 import type { Rule, Finding, AnalysisContext } from '../../types.js';
+import { relative } from 'path';
 
 // ---------------------------------------------------------------------------
 // Patterns
@@ -30,8 +31,9 @@ const MODEL_PATH_SEGMENTS = ['model', 'entity', 'schema', 'repository', 'dao', '
 // ---------------------------------------------------------------------------
 
 function isRouteFile(filePath: string): boolean {
-  const lower = filePath.toLowerCase();
-  return ROUTE_PATH_SEGMENTS.some((seg) => lower.includes(seg));
+  // Normalize to forward slashes for cross-platform compatibility
+  const normalized = filePath.replace(/\\/g, '/').toLowerCase();
+  return ROUTE_PATH_SEGMENTS.some((seg) => normalized.includes(seg));
 }
 
 function isModelImport(importTo: string): boolean {
@@ -62,7 +64,7 @@ export const arch003: Rule = {
       findings.push({
         ruleId: 'ARCH003',
         severity: 'medium',
-        message: `Route/controller file imports data-layer module(s) directly: ${modelImports.map((e) => e.to.replace(context.projectRoot + '/', '')).join(', ')}`,
+        message: `Route/controller file imports data-layer module(s) directly: ${modelImports.map((e) => relative(context.projectRoot, e.to)).join(', ')}`,
         file: parsedFile.sourceFile.path,
         recommendation:
           'Introduce a service or repository layer between route handlers and data models. Route handlers should call service functions, not ORM methods directly.',
