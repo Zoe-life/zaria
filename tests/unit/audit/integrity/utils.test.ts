@@ -122,6 +122,46 @@ describe('extractFunctionBodies', () => {
     expect(bodies).toHaveLength(1);
     expect(bodies[0]).toContain('doSomething');
   });
+
+  // Regression: `=>` tokens inside parameter lists (e.g. callback type annotations
+  // or default arrow params) must not enable the arrow-mode body-opener logic while
+  // the outer parameter list is still open.
+  it('extracts arrow function body when a param type contains an arrow-returning object literal type', () => {
+    // `() => { x: number }` in the type annotation introduces `=>` and `{` while
+    // `pendingParenDepth > 0`.  Without the fix, `sawArrow` would be set early and
+    // the `{` of the object type would be mistaken for the body opener.
+    const content = ['const fn = (a: () => { x: number }) => {', '  return a();', '};'].join('\n');
+    const bodies = extractFunctionBodies(content);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toContain('return a()');
+  });
+
+  it('extracts function declaration body when a param has a default arrow with brace-enclosed return', () => {
+    // `a = () => ({ value: 1 })` in the default parameter introduces `=>` and `(`
+    // while `pendingParenDepth > 0`.  The `{` of the default value expression must
+    // not be treated as the body opener.
+    const content = ['function foo(a = () => ({ value: 1 })) {', '  return a;', '}'].join('\n');
+    const bodies = extractFunctionBodies(content);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toContain('return a');
+  });
+
+  it('extracts all function bodies when functions have callback-typed params with object return types', () => {
+    // Two consecutive functions — each with `=>` inside their parameter lists —
+    // must both be captured correctly with no body merging.
+    const content = [
+      'function first(cb: () => { ok: boolean }) {',
+      '  doFirst();',
+      '}',
+      'function second(cb: () => { ok: boolean }) {',
+      '  doSecond();',
+      '}',
+    ].join('\n');
+    const bodies = extractFunctionBodies(content);
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0]).toContain('doFirst');
+    expect(bodies[1]).toContain('doSecond');
+  });
 });
 
 describe('FUNCTION_START regex', () => {
