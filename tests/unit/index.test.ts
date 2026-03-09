@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { VERSION, run } from '../../src/index.js';
+import { VERSION, run } from '../../src/index.ts';
 
 describe('Zaria entry point', () => {
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
