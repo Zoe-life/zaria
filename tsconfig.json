@@ -8,7 +8,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "incremental": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo",
     "declaration": true,
     "sourceMap": true,
     "strict": true,
