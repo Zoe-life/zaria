@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { resolve } from 'path';
 import { traverseFiles } from '../../../../src/audit/traversal.ts';
 import { parseFiles } from '../../../../src/audit/parser.ts';
@@ -8,10 +8,6 @@ import { arch003 } from '../../../../src/audit/architecture/rules/arch003.ts';
 
 const SAMPLE_TS_APP = resolve(import.meta.dirname, '../../../fixtures/sample-ts-app');
 const CLEAN_APP = resolve(import.meta.dirname, '../../../fixtures/clean-app');
-
-function buildContext(dir: string): import('../../../../src/audit/types.ts').AnalysisContext {
-  return buildAnalysisContext(dir, parseFiles(traverseFiles(dir)));
-}
 
 function makeFile(filePath: string, importTos: string[]): ParsedFile {
   const sf: SourceFile = {
@@ -36,6 +32,14 @@ function syntheticContext(files: ParsedFile[]): AnalysisContext {
 }
 
 describe('ARCH003 — Missing Abstraction Layer', () => {
+  let sampleCtx!: AnalysisContext;
+  let cleanCtx!: AnalysisContext;
+
+  beforeAll(() => {
+    sampleCtx = buildAnalysisContext(SAMPLE_TS_APP, parseFiles(traverseFiles(SAMPLE_TS_APP)));
+    cleanCtx = buildAnalysisContext(CLEAN_APP, parseFiles(traverseFiles(CLEAN_APP)));
+  });
+
   it('has correct metadata', () => {
     expect(arch003.id).toBe('ARCH003');
     expect(arch003.severity).toBe('medium');
@@ -43,8 +47,7 @@ describe('ARCH003 — Missing Abstraction Layer', () => {
   });
 
   it('detects routes.ts directly importing model files in sample-ts-app', () => {
-    const ctx = buildContext(SAMPLE_TS_APP);
-    const findings = arch003.check(ctx);
+    const findings = arch003.check(sampleCtx);
     expect(findings.length).toBeGreaterThan(0);
     expect(findings.some((f) => f.file.endsWith('routes.ts'))).toBe(true);
   });
@@ -79,8 +82,7 @@ describe('ARCH003 — Missing Abstraction Layer', () => {
   });
 
   it('produces zero findings on clean-app', () => {
-    const ctx = buildContext(CLEAN_APP);
-    const findings = arch003.check(ctx);
+    const findings = arch003.check(cleanCtx);
     expect(findings).toHaveLength(0);
   });
 });

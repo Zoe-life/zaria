@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { resolve } from 'path';
 import { traverseFiles } from '../../../../src/audit/traversal.ts';
 import { parseFiles } from '../../../../src/audit/parser.ts';
@@ -7,10 +7,6 @@ import type { AnalysisContext, ParsedFile, SourceFile } from '../../../../src/au
 import { perf003 } from '../../../../src/audit/performance/rules/perf003.ts';
 
 const CLEAN_APP = resolve(import.meta.dirname, '../../../fixtures/clean-app');
-
-function buildContext(dir: string): import('../../../../src/audit/types.ts').AnalysisContext {
-  return buildAnalysisContext(dir, parseFiles(traverseFiles(dir)));
-}
 
 /** Build a minimal synthetic context with a single file containing `content`. */
 function syntheticContext(filePath: string, content: string): AnalysisContext {
@@ -39,6 +35,12 @@ function syntheticContext(filePath: string, content: string): AnalysisContext {
 }
 
 describe('PERF003 — Missing Caching Strategy', () => {
+  let cleanCtx!: AnalysisContext;
+
+  beforeAll(() => {
+    cleanCtx = buildAnalysisContext(CLEAN_APP, parseFiles(traverseFiles(CLEAN_APP)));
+  });
+
   it('has correct metadata', () => {
     expect(perf003.id).toBe('PERF003');
     expect(perf003.severity).toBe('medium');
@@ -92,8 +94,7 @@ describe('PERF003 — Missing Caching Strategy', () => {
   });
 
   it('produces zero findings on clean-app', () => {
-    const ctx = buildContext(CLEAN_APP);
-    const findings = perf003.check(ctx);
+    const findings = perf003.check(cleanCtx);
     expect(findings).toHaveLength(0);
   });
 

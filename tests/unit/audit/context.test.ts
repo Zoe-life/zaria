@@ -1,50 +1,50 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { resolve } from 'path';
 import { traverseFiles } from '../../../src/audit/traversal.ts';
 import { parseFiles } from '../../../src/audit/parser.ts';
 import { buildAnalysisContext } from '../../../src/audit/context.ts';
+import type { AnalysisContext, ParsedFile } from '../../../src/audit/types.ts';
 
 const SAMPLE_TS_APP = resolve(import.meta.dirname, '../../fixtures/sample-ts-app');
 const CLEAN_APP = resolve(import.meta.dirname, '../../fixtures/clean-app');
 
 describe('buildAnalysisContext', () => {
+  let cleanParsed!: ParsedFile[];
+  let cleanCtx!: AnalysisContext;
+  let sampleParsed!: ParsedFile[];
+  let sampleCtx!: AnalysisContext;
+
+  beforeAll(() => {
+    cleanParsed = parseFiles(traverseFiles(CLEAN_APP));
+    cleanCtx = buildAnalysisContext(CLEAN_APP, cleanParsed);
+    sampleParsed = parseFiles(traverseFiles(SAMPLE_TS_APP));
+    sampleCtx = buildAnalysisContext(SAMPLE_TS_APP, sampleParsed);
+  });
+
   it('sets projectRoot correctly', () => {
-    const files = parseFiles(traverseFiles(CLEAN_APP));
-    const ctx = buildAnalysisContext(CLEAN_APP, files);
-    expect(ctx.projectRoot).toBe(CLEAN_APP);
+    expect(cleanCtx.projectRoot).toBe(CLEAN_APP);
   });
 
   it('includes all parsed files', () => {
-    const sourceFiles = traverseFiles(CLEAN_APP);
-    const parsed = parseFiles(sourceFiles);
-    const ctx = buildAnalysisContext(CLEAN_APP, parsed);
-    expect(ctx.files.length).toBe(parsed.length);
+    expect(cleanCtx.files.length).toBe(cleanParsed.length);
   });
 
   it('computes totalLoc as sum of individual file LOCs', () => {
-    const parsed = parseFiles(traverseFiles(CLEAN_APP));
-    const ctx = buildAnalysisContext(CLEAN_APP, parsed);
-    const expected = parsed.reduce((s, f) => s + f.loc, 0);
-    expect(ctx.totalLoc).toBe(expected);
+    const expected = cleanParsed.reduce((s, f) => s + f.loc, 0);
+    expect(cleanCtx.totalLoc).toBe(expected);
   });
 
   it('builds languageDistribution correctly', () => {
-    const parsed = parseFiles(traverseFiles(CLEAN_APP));
-    const ctx = buildAnalysisContext(CLEAN_APP, parsed);
-    expect(ctx.languageDistribution['typescript']).toBeGreaterThan(0);
+    expect(cleanCtx.languageDistribution['typescript']).toBeGreaterThan(0);
   });
 
   it('flattens import graph from all files', () => {
-    const parsed = parseFiles(traverseFiles(SAMPLE_TS_APP));
-    const ctx = buildAnalysisContext(SAMPLE_TS_APP, parsed);
     // sample-ts-app has files with imports
-    expect(ctx.importGraph.length).toBeGreaterThan(0);
+    expect(sampleCtx.importGraph.length).toBeGreaterThan(0);
   });
 
   it('deduplicates import graph edges', () => {
-    const parsed = parseFiles(traverseFiles(SAMPLE_TS_APP));
-    const ctx = buildAnalysisContext(SAMPLE_TS_APP, parsed);
-    const edgeKeys = ctx.importGraph.map((e) => `${e.from}→${e.to}`);
+    const edgeKeys = sampleCtx.importGraph.map((e) => `${e.from}→${e.to}`);
     const unique = new Set(edgeKeys);
     expect(unique.size).toBe(edgeKeys.length);
   });

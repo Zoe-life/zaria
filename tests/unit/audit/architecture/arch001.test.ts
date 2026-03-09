@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { resolve } from 'path';
 import { traverseFiles } from '../../../../src/audit/traversal.ts';
 import { parseFiles } from '../../../../src/audit/parser.ts';
@@ -8,10 +8,6 @@ import { arch001 } from '../../../../src/audit/architecture/rules/arch001.ts';
 
 const SAMPLE_TS_APP = resolve(import.meta.dirname, '../../../fixtures/sample-ts-app');
 const CLEAN_APP = resolve(import.meta.dirname, '../../../fixtures/clean-app');
-
-function buildContext(dir: string): import('../../../../src/audit/types.ts').AnalysisContext {
-  return buildAnalysisContext(dir, parseFiles(traverseFiles(dir)));
-}
 
 /** Construct a synthetic AnalysisContext with the given import edges. */
 function contextWithEdges(projectRoot: string, edges: Array<[string, string]>): AnalysisContext {
@@ -25,6 +21,14 @@ function contextWithEdges(projectRoot: string, edges: Array<[string, string]>): 
 }
 
 describe('ARCH001 — Circular Dependency Detection', () => {
+  let sampleCtx!: AnalysisContext;
+  let cleanCtx!: AnalysisContext;
+
+  beforeAll(() => {
+    sampleCtx = buildAnalysisContext(SAMPLE_TS_APP, parseFiles(traverseFiles(SAMPLE_TS_APP)));
+    cleanCtx = buildAnalysisContext(CLEAN_APP, parseFiles(traverseFiles(CLEAN_APP)));
+  });
+
   it('has correct metadata', () => {
     expect(arch001.id).toBe('ARCH001');
     expect(arch001.severity).toBe('high');
@@ -32,16 +36,14 @@ describe('ARCH001 — Circular Dependency Detection', () => {
   });
 
   it('detects the circular dependency in sample-ts-app', () => {
-    const ctx = buildContext(SAMPLE_TS_APP);
-    const findings = arch001.check(ctx);
+    const findings = arch001.check(sampleCtx);
     // circular-a.ts ↔ circular-b.ts form a cycle
     expect(findings.length).toBeGreaterThan(0);
     expect(findings[0].ruleId).toBe('ARCH001');
   });
 
   it('findings reference the file at the start of the cycle', () => {
-    const ctx = buildContext(SAMPLE_TS_APP);
-    const findings = arch001.check(ctx);
+    const findings = arch001.check(sampleCtx);
     expect(findings[0].file).toBeTruthy();
   });
 
@@ -76,8 +78,7 @@ describe('ARCH001 — Circular Dependency Detection', () => {
   });
 
   it('produces zero findings on clean-app', () => {
-    const ctx = buildContext(CLEAN_APP);
-    const findings = arch001.check(ctx);
+    const findings = arch001.check(cleanCtx);
     expect(findings).toHaveLength(0);
   });
 

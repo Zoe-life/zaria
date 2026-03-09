@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { resolve } from 'path';
 import { traverseFiles } from '../../../../src/audit/traversal.ts';
 import { parseFiles } from '../../../../src/audit/parser.ts';
@@ -8,10 +8,6 @@ import { perf004 } from '../../../../src/audit/performance/rules/perf004.ts';
 
 const SAMPLE_TS_APP = resolve(import.meta.dirname, '../../../fixtures/sample-ts-app');
 const CLEAN_APP = resolve(import.meta.dirname, '../../../fixtures/clean-app');
-
-function buildContext(dir: string): import('../../../../src/audit/types.ts').AnalysisContext {
-  return buildAnalysisContext(dir, parseFiles(traverseFiles(dir)));
-}
 
 function syntheticContext(filePath: string, content: string): AnalysisContext {
   const sourceFile: SourceFile = {
@@ -39,6 +35,14 @@ function syntheticContext(filePath: string, content: string): AnalysisContext {
 }
 
 describe('PERF004 — Memory Leak Patterns', () => {
+  let sampleCtx!: AnalysisContext;
+  let cleanCtx!: AnalysisContext;
+
+  beforeAll(() => {
+    sampleCtx = buildAnalysisContext(SAMPLE_TS_APP, parseFiles(traverseFiles(SAMPLE_TS_APP)));
+    cleanCtx = buildAnalysisContext(CLEAN_APP, parseFiles(traverseFiles(CLEAN_APP)));
+  });
+
   it('has correct metadata', () => {
     expect(perf004.id).toBe('PERF004');
     expect(perf004.severity).toBe('medium');
@@ -46,15 +50,13 @@ describe('PERF004 — Memory Leak Patterns', () => {
   });
 
   it('detects addEventListener without removeEventListener in sample-ts-app', () => {
-    const ctx = buildContext(SAMPLE_TS_APP);
-    const findings = perf004.check(ctx);
+    const findings = perf004.check(sampleCtx);
     // sample-ts-app/index.ts has two addEventListener calls and no removeEventListener
     expect(findings.some((f) => f.message.includes('addEventListener'))).toBe(true);
   });
 
   it('findings include ruleId PERF004', () => {
-    const ctx = buildContext(SAMPLE_TS_APP);
-    const findings = perf004.check(ctx);
+    const findings = perf004.check(sampleCtx);
     expect(findings.every((f) => f.ruleId === 'PERF004')).toBe(true);
   });
 
@@ -80,8 +82,7 @@ describe('PERF004 — Memory Leak Patterns', () => {
   });
 
   it('produces zero findings on clean-app', () => {
-    const ctx = buildContext(CLEAN_APP);
-    const findings = perf004.check(ctx);
+    const findings = perf004.check(cleanCtx);
     expect(findings).toHaveLength(0);
   });
 });

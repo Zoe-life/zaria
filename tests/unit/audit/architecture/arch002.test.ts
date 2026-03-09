@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { resolve } from 'path';
 import { traverseFiles } from '../../../../src/audit/traversal.ts';
 import { parseFiles } from '../../../../src/audit/parser.ts';
@@ -8,10 +8,6 @@ import { arch002 } from '../../../../src/audit/architecture/rules/arch002.ts';
 
 const SAMPLE_TS_APP = resolve(import.meta.dirname, '../../../fixtures/sample-ts-app');
 const CLEAN_APP = resolve(import.meta.dirname, '../../../fixtures/clean-app');
-
-function buildContext(dir: string): import('../../../../src/audit/types.ts').AnalysisContext {
-  return buildAnalysisContext(dir, parseFiles(traverseFiles(dir)));
-}
 
 function makeFile(loc: number, exportCount: number): ParsedFile {
   const sf: SourceFile = {
@@ -36,6 +32,14 @@ function syntheticContext(files: ParsedFile[]): AnalysisContext {
 }
 
 describe('ARCH002 — God Module Detection', () => {
+  let sampleCtx!: AnalysisContext;
+  let cleanCtx!: AnalysisContext;
+
+  beforeAll(() => {
+    sampleCtx = buildAnalysisContext(SAMPLE_TS_APP, parseFiles(traverseFiles(SAMPLE_TS_APP)));
+    cleanCtx = buildAnalysisContext(CLEAN_APP, parseFiles(traverseFiles(CLEAN_APP)));
+  });
+
   it('has correct metadata', () => {
     expect(arch002.id).toBe('ARCH002');
     expect(arch002.severity).toBe('medium');
@@ -43,15 +47,13 @@ describe('ARCH002 — God Module Detection', () => {
   });
 
   it('detects god-module.ts in sample-ts-app (>500 LOC, >20 exports)', () => {
-    const ctx = buildContext(SAMPLE_TS_APP);
-    const findings = arch002.check(ctx);
+    const findings = arch002.check(sampleCtx);
     expect(findings.length).toBeGreaterThan(0);
     expect(findings.some((f) => f.file.endsWith('god-module.ts'))).toBe(true);
   });
 
   it('findings include ruleId ARCH002', () => {
-    const ctx = buildContext(SAMPLE_TS_APP);
-    const findings = arch002.check(ctx);
+    const findings = arch002.check(sampleCtx);
     expect(findings.every((f) => f.ruleId === 'ARCH002')).toBe(true);
   });
 
@@ -80,8 +82,7 @@ describe('ARCH002 — God Module Detection', () => {
   });
 
   it('produces zero findings on clean-app', () => {
-    const ctx = buildContext(CLEAN_APP);
-    const findings = arch002.check(ctx);
+    const findings = arch002.check(cleanCtx);
     expect(findings).toHaveLength(0);
   });
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { resolve } from 'path';
 import { traverseFiles } from '../../../../src/audit/traversal.ts';
 import { parseFiles } from '../../../../src/audit/parser.ts';
@@ -7,10 +7,6 @@ import type { AnalysisContext, ParsedFile, SourceFile } from '../../../../src/au
 import { arch004 } from '../../../../src/audit/architecture/rules/arch004.ts';
 
 const CLEAN_APP = resolve(import.meta.dirname, '../../../fixtures/clean-app');
-
-function buildContext(dir: string): import('../../../../src/audit/types.ts').AnalysisContext {
-  return buildAnalysisContext(dir, parseFiles(traverseFiles(dir)));
-}
 
 function makeFileWithImports(filePath: string, importCount: number): ParsedFile {
   const sf: SourceFile = {
@@ -39,6 +35,12 @@ function syntheticContext(files: ParsedFile[]): AnalysisContext {
 }
 
 describe('ARCH004 — Tight Coupling Detection', () => {
+  let cleanCtx!: AnalysisContext;
+
+  beforeAll(() => {
+    cleanCtx = buildAnalysisContext(CLEAN_APP, parseFiles(traverseFiles(CLEAN_APP)));
+  });
+
   it('has correct metadata', () => {
     expect(arch004.id).toBe('ARCH004');
     expect(arch004.severity).toBe('low');
@@ -98,8 +100,7 @@ describe('ARCH004 — Tight Coupling Detection', () => {
   });
 
   it('produces zero findings on clean-app', () => {
-    const ctx = buildContext(CLEAN_APP);
-    const findings = arch004.check(ctx);
+    const findings = arch004.check(cleanCtx);
     expect(findings).toHaveLength(0);
   });
 });
