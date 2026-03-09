@@ -141,7 +141,6 @@ Commands:
   plugin remove <name>  Remove a Zaria plugin
 
 Options:
-  -p, --path <path>       Path to project root (default: current directory)
   -o, --output <format>   Output format: terminal|json|html|markdown|sarif (default: terminal)
   -f, --file <path>       Write report to file instead of stdout
   -t, --threshold <score> Fail with exit code 1 if overall score is below this value (0-100)
@@ -169,8 +168,8 @@ zaria audit --threshold 70
 # Run only architecture and maintenance audits
 zaria audit --only arch,maint
 
-# Full audit with SRE data from connected Prometheus instance
-zaria audit --sre
+# Full audit with SRE data fetching disabled
+zaria audit --no-sre
 
 # Initialise config for a project
 zaria config init
