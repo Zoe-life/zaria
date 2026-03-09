@@ -1,8 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mkdtemp, rm } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import { buildProgram } from '../../../src/cli/index.ts';
 
 function parse(args: string[]): void {
   buildProgram().parse(['node', 'zaria', ...args]);
+}
+
+async function parseAsync(args: string[]): Promise<void> {
+  await buildProgram().parseAsync(['node', 'zaria', ...args]);
 }
 
 describe('CLI program', () => {
@@ -84,14 +91,32 @@ describe('CLI program', () => {
   });
 
   // config commands
-  it('config init: prints stub message', () => {
-    parse(['config', 'init']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Scaffolding .zariarc.yml…');
+  it('config init: creates .zariarc.yml and prints success', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'zaria-cli-test-'));
+    try {
+      await parseAsync(['config', 'init', '--dir', dir]);
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('✅'));
+      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('.zariarc.yml'));
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
-  it('config validate: prints stub message', () => {
-    parse(['config', 'validate']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Config valid.');
+  it('config validate: reports no config found when none exists', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'zaria-cli-test-'));
+    try {
+      // Temporarily change cwd so loadConfig searches in the empty temp dir.
+      const originalCwd = process.cwd();
+      process.chdir(dir);
+      try {
+        await parseAsync(['config', 'validate']);
+        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('No config file found'));
+      } finally {
+        process.chdir(originalCwd);
+      }
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   // sre commands

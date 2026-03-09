@@ -4,8 +4,8 @@ version: 1
 
 project:
   name: "My Web Application"
-  type: web          # web | mobile | desktop | library
-  language: typescript  # typescript | javascript | python | go
+  type: web          # web | mobile | desktop | cli | library
+  language: typescript  # typescript | javascript | python | go | rust | java
 
 audit:
   dimensions:

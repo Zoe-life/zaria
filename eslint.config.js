@@ -13,7 +13,7 @@ export default [
       parser: tsParser,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['tests/unit/*.ts', 'tests/unit/cli/*.ts', 'tests/integration/*.ts'],
+          allowDefaultProject: ['tests/unit/*.ts', 'tests/unit/cli/*.ts', 'tests/unit/config/*.ts', 'tests/integration/*.ts'],
           defaultProject: './tsconfig.lint.json',
         },
         tsconfigRootDir: import.meta.dirname,

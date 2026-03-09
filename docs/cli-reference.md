@@ -1,6 +1,6 @@
 # Zaria — CLI Reference
 
-> **Phase 2** — All commands and flags parse correctly. Handlers are stubs that will be replaced in subsequent phases.
+> **Phase 3** — Configuration system implemented. Config commands are fully functional.
 
 ---
 
@@ -131,21 +131,62 @@ zaria report [options]
 
 ### `config init`
 
-Scaffold a `.zariarc.yml` configuration file in the current directory.
+Scaffold a `.zariarc.yml` configuration file in the current directory (or a specified directory). Zaria auto-detects the project type and primary language from the directory contents.
 
 ```bash
-zaria config init
+zaria config init [options]
 ```
+
+**Options**
+
+| Flag | Description | Default |
+|---|---|---|
+| `--dir <path>` | Target directory to scaffold into | current directory |
+| `--force` | Overwrite an existing `.zariarc.yml` | `false` |
+
+**Output**
+
+```
+✅  Created .zariarc.yml in /my/project
+    Detected project: my-app
+    Detected type   : web
+    Detected language: typescript
+```
+
+Exits with code 1 if `.zariarc.yml` already exists and `--force` is not set.
 
 ---
 
 ### `config validate`
 
-Validate the current `.zariarc` configuration file.
+Validate the `.zariarc` configuration file found in the current directory, or a file specified with `--config`.
 
 ```bash
-zaria config validate
+zaria config validate [options]
 ```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `--config <path>` | Path to the config file to validate |
+
+**Output — valid**
+
+```
+✅  Config valid (/my/project/.zariarc.yml)
+```
+
+**Output — invalid**
+
+```
+❌  Config "/my/project/.zariarc.yml" has 2 error(s):
+
+  • audit.thresholds.overall: Too big: expected number to be <=100
+  • ignore.rules: Unknown rule ID "NONEXISTENT". Known IDs: PERF001, …
+```
+
+Exits with code 1 when the config is invalid.
 
 ---
 
