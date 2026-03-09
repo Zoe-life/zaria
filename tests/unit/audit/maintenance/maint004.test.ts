@@ -97,6 +97,27 @@ describe('MAINT004 — Missing Test Coverage', () => {
     expect(findings).toHaveLength(0);
   });
 
+  it('does not flag source files covered by directory-based test files (no .test./.spec. suffix)', () => {
+    // tests/user.ts is detected as a test file via directory segment, not filename suffix.
+    // Its basename "user" must still be added to coveredBases so src/user.ts is not flagged.
+    const ctx = ctxWithFiles([makeFile('/proj/src/user.ts'), makeFile('/proj/tests/user.ts')]);
+    const findings = maint004.check(ctx);
+    expect(findings).toHaveLength(0);
+  });
+
+  it('correctly identifies covered and uncovered files with mixed test conventions', () => {
+    const ctx = ctxWithFiles([
+      makeFile('/proj/src/user.ts'),
+      makeFile('/proj/src/auth.ts'),
+      makeFile('/proj/src/product.ts'), // no test
+      makeFile('/proj/tests/user.ts'), // directory-based test for user
+      makeFile('/proj/src/auth.spec.ts'), // spec-based test for auth
+    ]);
+    const findings = maint004.check(ctx);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].file).toContain('product.ts');
+  });
+
   it('findings include a recommendation', () => {
     const ctx = ctxWithFiles([
       makeFile('/proj/src/foo.ts'),
