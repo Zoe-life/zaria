@@ -9,7 +9,7 @@
 1. [Overview](#overview)
 2. [Key Features](#key-features)
 3. [Audit Dimensions](#audit-dimensions)
-4. [Proposed Tech Stacks](#proposed-tech-stacks)
+4. [Tech Stack](#tech-stack)
 5. [Quick Start](#quick-start)
 6. [CLI Usage](#cli-usage)
 7. [Configuration](#configuration)
@@ -82,56 +82,22 @@ Zaria analyses static code, project structure, dependency graphs, and configurat
 
 ---
 
-## Proposed Tech Stacks
+## Tech Stack
 
-Two primary tech stacks are being considered for building Zaria. **Your input is needed to decide which to proceed with.**
+Zaria is built with **Node.js / TypeScript** — chosen for its best-in-class JS/TS AST tooling, vast npm ecosystem, and easy `npx` distribution.
 
----
-
-### Option A — Node.js / TypeScript ⭐ (Recommended)
-
-| Concern | Choice | Rationale |
-|---|---|---|
-| Language | TypeScript 5.x | Type safety, excellent ecosystem, native JS/TS AST tooling |
-| CLI framework | [Commander.js](https://github.com/tj/commander.js) + [Ink](https://github.com/vadimdemedes/ink) | Commander for argument parsing; Ink (React-for-CLI) for rich interactive terminal UI |
-| Static analysis | [ts-morph](https://ts-morph.com/), [ESLint API](https://eslint.org/docs/developer-guide/nodejs-api), [Babel parser](https://babeljs.io/docs/babel-parser) | Full AST access for JS/TS codebases |
-| Dependency graph | [madge](https://github.com/pahen/madge) | Circular dependency and module graph analysis |
-| SRE HTTP client | [Axios](https://axios-http.com/) | Prometheus, Datadog, Grafana API calls |
-| Config parsing | [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) | Zero-config with `.zariarc`, `zaria.config.ts` support |
-| Report generation | [chalk](https://github.com/chalk/chalk), [cli-table3](https://github.com/cli-table/cli-table3), [PDFKit](https://pdfkit.org/) | Terminal, JSON, HTML, PDF output |
-| Testing | [Vitest](https://vitest.dev/) | Fast, TypeScript-native test runner |
-| Distribution | [pkg](https://github.com/vercel/pkg) or [npm](https://npmjs.com) | Single binary or `npx zaria` |
-| Plugin system | ESM dynamic `import()` with a typed plugin interface | Extensible without forking |
-
-**Pros:** Best-in-class JS/TS AST tooling (first-class citizen for the primary target language), vast npm ecosystem, easy for developers to contribute, straightforward CI integration via `npx`.
-
-**Cons:** Single-threaded by default (worker threads needed for parallelism); runtime dependency (Node.js) unless compiled to binary.
-
----
-
-### Option B — Go
-
-| Concern | Choice | Rationale |
-|---|---|---|
-| Language | Go 1.22+ | Compiled, fast startup, excellent concurrency via goroutines |
-| CLI framework | [Cobra](https://github.com/spf13/cobra) + [Bubbletea](https://github.com/charmbracelet/bubbletea) | Industry-standard CLI structure; Bubbletea for TUI |
-| Static analysis | [go/ast](https://pkg.go.dev/go/ast), [tree-sitter Go bindings](https://github.com/smacker/go-tree-sitter) | Multi-language parsing via tree-sitter |
-| SRE HTTP client | Standard `net/http` | Built-in, zero dependency |
-| Config parsing | [Viper](https://github.com/spf13/viper) | `.zariarc`, YAML, TOML, environment variable support |
-| Report generation | [lipgloss](https://github.com/charmbracelet/lipgloss), `encoding/json`, `html/template` | Styled terminal output, structured reports |
-| Testing | Built-in `testing` package + [testify](https://github.com/stretchr/testify) | Standard Go testing |
-| Distribution | [goreleaser](https://goreleaser.com/) | Single binary for Linux, macOS, Windows — no runtime needed |
-| Plugin system | Go plugins (`.so`) or gRPC-based plugin host | Native or process-isolated plugins |
-
-**Pros:** Single binary with zero runtime dependency, excellent concurrency model (ideal for parallel audit checks), great cross-platform distribution.
-
-**Cons:** Less mature JS/TS AST ecosystem (the primary target language class), steeper contributor barrier, tree-sitter bindings add complexity.
-
----
-
-### Decision Required
-
-> **Please review the two options above and indicate which tech stack you'd like to proceed with.** The plan and all implementation steps in `PLAN.md` are written in a tech-stack-agnostic way initially, with concrete tooling filled in once a stack is confirmed.
+| Concern | Choice |
+|---|---|
+| Language | TypeScript 5.x |
+| CLI framework | [Commander.js](https://github.com/tj/commander.js) + [Ink](https://github.com/vadimdemedes/ink) |
+| Static analysis | [ts-morph](https://ts-morph.com/), [ESLint API](https://eslint.org/docs/developer-guide/nodejs-api) |
+| Dependency graph | [madge](https://github.com/pahen/madge) |
+| SRE HTTP client | [Axios](https://axios-http.com/) |
+| Config parsing | [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) |
+| Report generation | [chalk](https://github.com/chalk/chalk), [cli-table3](https://github.com/cli-table/cli-table3) |
+| Testing | [Vitest](https://vitest.dev/) |
+| Distribution | npm / `npx zaria` |
+| Plugin system | ESM dynamic `import()` with a typed plugin interface |
 
 ---
 

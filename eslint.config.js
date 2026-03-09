@@ -6,6 +6,9 @@ import tsParser from '@typescript-eslint/parser';
 export default [
   {
     files: ['src/**/*.ts', 'tests/**/*.ts'],
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+    },
     languageOptions: {
       parser: tsParser,
       parserOptions: {
