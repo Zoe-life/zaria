@@ -24,7 +24,10 @@ export function buildProgram(): Command {
     .version(pkg.version, '--version', 'Show version number')
     .option('--config <path>', 'path to a custom config file')
     .option('-v, --verbose', 'show verbose output')
-    .option('--no-sre', 'disable SRE data fetching even if configured');
+    .option('--no-sre', 'disable SRE data fetching even if configured')
+    .action(() => {
+      program.outputHelp();
+    });
 
   program.addCommand(auditCommand);
   program.addCommand(auditPerfCommand);

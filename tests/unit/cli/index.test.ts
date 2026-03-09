@@ -22,6 +22,17 @@ describe('CLI program', () => {
     processExitSpy.mockRestore();
   });
 
+  // no args — should show help and exit 0 (no process.exit call)
+  it('should display help without exiting when no command is given', () => {
+    const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    try {
+      expect(() => parse([])).not.toThrow();
+      expect(writeSpy).toHaveBeenCalled();
+    } finally {
+      writeSpy.mockRestore();
+    }
+  });
+
   // --version
   it('should print version and exit when --version is passed', () => {
     expect(() => parse(['--version'])).toThrow('process.exit called');
