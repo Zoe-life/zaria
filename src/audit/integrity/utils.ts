@@ -59,19 +59,31 @@ export function extractFunctionBodies(content: string): string[] {
    * Additionally, TypeScript inline object type literals in parameter
    * annotations (e.g. `(opts: { dir?: string }) => {`) contain `{}`
    * before the real body `{`.  The pending-phase scanner therefore applies
-   * two heuristics to identify the genuine body-opening brace:
+   * two heuristics to identify the genuine body-opening brace, depending on
+   * which `FUNCTION_START` alternative matched:
    *
-   * - Arrow functions  (`sawArrow = true`): only a `{` seen **after** `=>`
-   *   with no unclosed type-annotation brace (`pendingBraceDepth === 0`)
-   *   is treated as the body opener.
-   * - `function` / method declarations: only a `{` seen after the parameter
-   *   list has closed (`pendingParenDepth <= 0`) with no unclosed
-   *   type-annotation brace (`pendingBraceDepth === 0`) is accepted.
+   * - **Alternative 3** (`(?:async\s*)?\([^)]*\)\s*=>`, i.e. a
+   *   `(params) =>` form): the match text ends with `=>`, so the real
+   *   body `{` is always the first `{` seen after `sawArrow` with no
+   *   unclosed type-annotation brace (`pendingBraceDepth === 0`).  Because
+   *   the surrounding call-site `(` (e.g. from `.action(async () => {`)
+   *   is never closed within the pending phase, `pendingParenDepth` may be
+   *   > 0 at the body `{` and cannot be used as a guard.
+   *
+   * - **Alternatives 1, 2, 4** (`function foo(`, `const fn = (`,
+   *   `async foo(params) {`): the match text ends with `(` or `{`, so the
+   *   `=>` (if any) only appears inside the parameter list.  These are
+   *   **non-immediately-arrow** forms.  Only a `{` seen **after** the
+   *   parameter list has fully closed (`pendingParenDepth <= 0`) with no
+   *   unclosed type-annotation brace is accepted as the body opener.  The
+   *   `pendingParenDepth` guard is essential: `=>` tokens inside nested
+   *   parameter type annotations (e.g. `(cb: () => { x: number }) =>`)
+   *   set `sawArrow` while the outer `(` is still open, so without this
+   *   guard the type-literal `{` would be mistaken for the real body opener.
    *
    * `pendingBraceDepth` counts `{` / `}` pairs encountered inside the
-   * parameter list (i.e. while `pendingParenDepth > 0` for non-arrow
-   * functions, or before `=>` for arrow functions) so that a type-literal
-   * closing `}` cannot accidentally terminate an unstarted body.
+   * parameter list (i.e. while `pendingParenDepth > 0`) so that a
+   * type-literal closing `}` cannot accidentally terminate an unstarted body.
    */
   let pendingFunction = false;
   let depth = 0;
@@ -82,9 +94,17 @@ export function extractFunctionBodies(content: string): string[] {
   let sawEq = false; // intermediate flag: `=` just seen (for `=>` detection)
   let pendingParenDepth = 0; // `(` / `)` nesting during the pending phase
   let pendingBraceDepth = 0; // `{` / `}` pairs inside type annotations (pending phase)
+  // true when the FUNCTION_START match was alternative 3 (`(params) =>`), i.e.
+  // the match text itself ends with `=>`.  For these matches the body `{` may
+  // appear while `pendingParenDepth > 0` (the surrounding call-site `(` is never
+  // closed in the pending phase), so body-opener detection skips the depth guard
+  // and relies solely on `sawArrow && pendingBraceDepth === 0`.  For all other
+  // alternatives (1, 2, 4) the depth guard `pendingParenDepth <= 0` is required
+  // to prevent a nested `=>` in a type annotation from triggering body detection.
+  let pendingIsArrow3 = false;
 
   /** Resets all pending-phase tracking to a clean initial state. */
-  function resetPending(firstLine: string): void {
+  function resetPending(firstLine: string, isArrow3: boolean): void {
     pendingFunction = true;
     depth = 0;
     bodyLines = [firstLine];
@@ -92,20 +112,25 @@ export function extractFunctionBodies(content: string): string[] {
     sawEq = false;
     pendingParenDepth = 0;
     pendingBraceDepth = 0;
+    pendingIsArrow3 = isArrow3;
   }
 
   for (const line of lines) {
-    if (!inFunction && !pendingFunction && FUNCTION_START.test(line)) {
+    let m: RegExpExecArray | null;
+
+    if (!inFunction && !pendingFunction && (m = FUNCTION_START.exec(line)) !== null) {
       // Candidate function start — wait for the opening `{`
-      resetPending(line);
+      // Detect alternative 3 (`(params) =>`) by whether the match ends with `=>`;
+      // this controls which body-opener heuristic is applied (see comment above).
+      resetPending(line, m[0].trimEnd().endsWith('=>'));
     } else if (inFunction) {
       bodyLines.push(line);
     } else if (pendingFunction) {
       // Still waiting for `{`.  If a new FUNCTION_START appears first, the
       // previous candidate was an expression-bodied arrow — reset to the new
       // candidate so we don't accumulate unrelated lines.
-      if (FUNCTION_START.test(line)) {
-        resetPending(line);
+      if ((m = FUNCTION_START.exec(line)) !== null) {
+        resetPending(line, m[0].trimEnd().endsWith('=>'));
       } else {
         bodyLines.push(line);
       }
@@ -132,9 +157,14 @@ export function extractFunctionBodies(content: string): string[] {
           } else if (ch === '{') {
             // Accept as body opener only when we have passed the relevant
             // syntactic marker and there is no unclosed type-annotation brace.
+            // For alt-3 matches (`(params) =>`, `pendingIsArrow3 = true`) the
+            // surrounding call-site `(` keeps depth > 0, so we rely on
+            // `sawArrow` alone.  For all other alternatives the parameter list
+            // must have fully closed (`pendingParenDepth <= 0`) to avoid
+            // mistaking a nested type-annotation `{` for the body opener.
             const isBodyOpener =
-              (sawArrow && pendingBraceDepth === 0) ||
-              (!sawArrow && pendingParenDepth <= 0 && pendingBraceDepth === 0);
+              (pendingIsArrow3 && sawArrow && pendingBraceDepth === 0) ||
+              (!pendingIsArrow3 && pendingParenDepth <= 0 && pendingBraceDepth === 0);
 
             if (isBodyOpener) {
               depth = 1;
