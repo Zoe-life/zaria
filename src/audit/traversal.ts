@@ -7,7 +7,7 @@
  * Zaria config.
  */
 
-import { readdirSync, statSync } from 'fs';
+import { readdirSync, lstatSync, realpathSync } from 'fs';
 import { join, extname, relative } from 'path';
 import type { SourceFile } from './types.js';
 
@@ -97,8 +97,19 @@ function isIgnored(filePath: string, projectRoot: string, ignorePaths: string[])
  */
 export function traverseFiles(projectRoot: string, ignorePaths: string[] = []): SourceFile[] {
   const results: SourceFile[] = [];
+  const visitedRealPaths = new Set<string>();
 
   function walk(dir: string): void {
+    // Track real paths to avoid symlink cycles
+    let realDir: string;
+    try {
+      realDir = realpathSync(dir);
+    } catch {
+      return;
+    }
+    if (visitedRealPaths.has(realDir)) return;
+    visitedRealPaths.add(realDir);
+
     let entries: string[];
     try {
       entries = readdirSync(dir);
@@ -112,16 +123,19 @@ export function traverseFiles(projectRoot: string, ignorePaths: string[] = []): 
 
       if (isIgnored(fullPath, projectRoot, ignorePaths)) continue;
 
-      let stat;
+      let lstat;
       try {
-        stat = statSync(fullPath);
+        lstat = lstatSync(fullPath);
       } catch {
         continue;
       }
 
-      if (stat.isDirectory()) {
+      // Skip symbolic links to prevent infinite recursion on symlink cycles
+      if (lstat.isSymbolicLink()) continue;
+
+      if (lstat.isDirectory()) {
         walk(fullPath);
-      } else if (stat.isFile()) {
+      } else if (lstat.isFile()) {
         const ext = extname(entry).toLowerCase();
         const language = detectLanguage(ext);
         if (language === 'unknown') continue; // only include TS/JS files
@@ -129,8 +143,8 @@ export function traverseFiles(projectRoot: string, ignorePaths: string[] = []): 
         results.push({
           path: fullPath,
           language,
-          size: stat.size,
-          lastModified: stat.mtime,
+          size: lstat.size,
+          lastModified: lstat.mtime,
         });
       }
     }

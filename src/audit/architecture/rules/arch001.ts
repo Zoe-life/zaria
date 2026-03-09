@@ -13,6 +13,7 @@
  */
 
 import type { Rule, Finding, AnalysisContext, ImportEdge } from '../../types.js';
+import { relative, isAbsolute } from 'path';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -23,8 +24,9 @@ function buildAdjacency(importGraph: ImportEdge[], projectRoot: string): Map<str
   const adj = new Map<string, Set<string>>();
 
   for (const edge of importGraph) {
-    // Only include intra-project edges
-    if (!edge.to.startsWith(projectRoot)) continue;
+    // Only include intra-project edges using path.relative to avoid prefix collisions
+    const rel = relative(projectRoot, edge.to);
+    if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) continue;
 
     if (!adj.has(edge.from)) adj.set(edge.from, new Set());
     adj.get(edge.from)!.add(edge.to);
@@ -113,7 +115,7 @@ export const arch001: Rule = {
       findings.push({
         ruleId: 'ARCH001',
         severity: 'high',
-        message: `Circular dependency detected: ${cycle.map((f) => f.replace(context.projectRoot + '/', '')).join(' → ')} → (back to start)`,
+        message: `Circular dependency detected: ${cycle.map((f) => relative(context.projectRoot, f)).join(' → ')} → (back to start)`,
         file: entry,
         recommendation:
           'Break the cycle by extracting shared logic into a separate module that neither participant imports from.',
