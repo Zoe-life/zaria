@@ -1,5 +1,5 @@
 /**
- * Public API for the Zaria audit engine — Phase 4 barrel exports.
+ * Public API for the Zaria audit engine — Phase 4–8 barrel exports.
  */
 
 export type {
@@ -16,3 +16,15 @@ export type {
 export { traverseFiles } from './traversal.js';
 export { parseFiles } from './parser.js';
 export { buildAnalysisContext } from './context.js';
+
+// Phase 5 — Performance
+export { PERFORMANCE_RULES, scorePerformance } from './performance/scorer.js';
+
+// Phase 6 — Architecture
+export { ARCHITECTURE_RULES, scoreArchitecture } from './architecture/scorer.js';
+
+// Phase 7 — Scalability & Observability
+export { SCALABILITY_RULES, scoreScalability } from './scalability/scorer.js';
+
+// Phase 8 — Data Integrity & Race Conditions
+export { INTEGRITY_RULES, scoreIntegrity } from './integrity/scorer.js';

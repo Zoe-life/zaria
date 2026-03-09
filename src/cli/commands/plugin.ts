@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { logger } from '../../logger.js';
 
 /** `zaria plugin` — plugin management sub-commands. */
 export const pluginCommand = new Command('plugin').description('Manage Zaria plugins');
@@ -8,7 +9,7 @@ pluginCommand
   .command('list')
   .description('List installed plugins')
   .action(() => {
-    console.log('No plugins installed.');
+    logger.info('No plugins installed.');
   });
 
 /** `zaria plugin add <name>` — installs a plugin. */
@@ -16,7 +17,7 @@ pluginCommand
   .command('add <name>')
   .description('Install a Zaria plugin')
   .action((name: string) => {
-    console.log(`Installing plugin ${name}…`);
+    logger.info(`Installing plugin ${name}…`);
   });
 
 /** `zaria plugin remove <name>` — removes a plugin. */
@@ -24,5 +25,5 @@ pluginCommand
   .command('remove <name>')
   .description('Remove a Zaria plugin')
   .action((name: string) => {
-    console.log(`Removing plugin ${name}…`);
+    logger.info(`Removing plugin ${name}…`);
   });

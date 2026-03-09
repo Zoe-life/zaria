@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { resolve } from 'path';
+import { logger } from '../../logger.js';
 
 /** Shared audit flags applied to every audit (sub-)command. */
 function addAuditFlags(cmd: Command): Command {
@@ -25,7 +26,7 @@ export const auditCommand = addAuditFlags(
     .description('Run a full audit on the given project path (default: current directory)')
     .argument('[path]', 'path to the project root')
     .action((path: string | undefined) => {
-      console.log(`Running full audit on ${resolveTargetPath(path)}…`);
+      logger.info(`Running full audit on ${resolveTargetPath(path)}…`);
     }),
 );
 
@@ -35,7 +36,7 @@ export const auditPerfCommand = addAuditFlags(
     .description('Run only the Performance audit')
     .argument('[path]', 'path to the project root')
     .action((path: string | undefined) => {
-      console.log(`Running performance audit on ${resolveTargetPath(path)}…`);
+      logger.info(`Running performance audit on ${resolveTargetPath(path)}…`);
     }),
 );
 
@@ -45,7 +46,7 @@ export const auditArchCommand = addAuditFlags(
     .description('Run only the Architecture audit')
     .argument('[path]', 'path to the project root')
     .action((path: string | undefined) => {
-      console.log(`Running architecture audit on ${resolveTargetPath(path)}…`);
+      logger.info(`Running architecture audit on ${resolveTargetPath(path)}…`);
     }),
 );
 
@@ -55,7 +56,7 @@ export const auditScaleCommand = addAuditFlags(
     .description('Run only the Scalability & Observability audit')
     .argument('[path]', 'path to the project root')
     .action((path: string | undefined) => {
-      console.log(`Running scalability audit on ${resolveTargetPath(path)}…`);
+      logger.info(`Running scalability audit on ${resolveTargetPath(path)}…`);
     }),
 );
 
@@ -65,7 +66,7 @@ export const auditIntegrityCommand = addAuditFlags(
     .description('Run only the Data Integrity & Race Conditions audit')
     .argument('[path]', 'path to the project root')
     .action((path: string | undefined) => {
-      console.log(`Running integrity audit on ${resolveTargetPath(path)}…`);
+      logger.info(`Running integrity audit on ${resolveTargetPath(path)}…`);
     }),
 );
 
@@ -75,6 +76,6 @@ export const auditMaintCommand = addAuditFlags(
     .description('Run only the Long-Term Maintenance audit')
     .argument('[path]', 'path to the project root')
     .action((path: string | undefined) => {
-      console.log(`Running maintenance audit on ${resolveTargetPath(path)}…`);
+      logger.info(`Running maintenance audit on ${resolveTargetPath(path)}…`);
     }),
 );

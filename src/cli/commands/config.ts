@@ -8,6 +8,7 @@ import {
   formatValidationResult,
 } from '../../config/index.js';
 import { detectProject } from '../../config/detect.js';
+import { logger } from '../../logger.js';
 
 /** `zaria config` — configuration management sub-commands. */
 export const configCommand = new Command('config').description('Manage Zaria configuration');
@@ -32,7 +33,7 @@ configCommand
       .catch(() => false);
 
     if (alreadyExists && !opts.force) {
-      console.error(`⚠️  .zariarc.yml already exists in ${targetDir}. Use --force to overwrite.`);
+      logger.warn(`⚠️  .zariarc.yml already exists in ${targetDir}. Use --force to overwrite.`);
       process.exitCode = 1;
       return;
     }
@@ -54,7 +55,7 @@ configCommand
         templatePath = join(devRoot, '.zariarc.example.yml');
         await access(templatePath);
       } catch {
-        console.error('❌  Could not locate .zariarc.example.yml template.');
+        logger.error('❌  Could not locate .zariarc.example.yml template.');
         process.exitCode = 1;
         return;
       }
@@ -65,17 +66,17 @@ configCommand
 
     await copyFile(templatePath, destPath);
 
-    console.log(`✅  Created .zariarc.yml in ${targetDir}`);
+    logger.info(`✅  Created .zariarc.yml in ${targetDir}`);
     if (detected.name) {
-      console.log(`    Detected project: ${detected.name}`);
+      logger.info(`    Detected project: ${detected.name}`);
     }
-    console.log(`    Detected type   : ${detected.type}`);
-    console.log(`    Detected language: ${detected.language}`);
-    console.log(`\n    Edit .zariarc.yml to customise thresholds, ignored paths, and plugins.`);
+    logger.info(`    Detected type   : ${detected.type}`);
+    logger.info(`    Detected language: ${detected.language}`);
+    logger.info(`\n    Edit .zariarc.yml to customise thresholds, ignored paths, and plugins.`);
 
     // Hint: update project.type and project.language to match detection.
     if (detected.type !== 'web' || detected.language !== 'typescript') {
-      console.log(
+      logger.info(
         `\n    💡  Update project.type to "${detected.type}" and project.language to "${detected.language}".`,
       );
     }
@@ -104,13 +105,13 @@ configCommand
       }
 
       if (!result) {
-        console.log('⚠️  No config file found. Run `zaria config init` to create one.');
+        logger.warn('⚠️  No config file found. Run `zaria config init` to create one.');
         return;
       }
 
       // Run semantic validation on top of the already schema-validated config.
       const validation = validateConfig(result.config);
-      console.log(formatValidationResult(validation, filePath));
+      logger.info(formatValidationResult(validation, filePath));
 
       if (!validation.valid) {
         process.exitCode = 1;
@@ -118,7 +119,7 @@ configCommand
     } catch (err: unknown) {
       // loadConfig / loadConfigFromFile throws on parse errors.
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`❌  ${message}`);
+      logger.error(`❌  ${message}`);
       process.exitCode = 1;
     }
   });

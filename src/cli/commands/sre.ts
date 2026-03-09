@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { logger } from '../../logger.js';
 
 /** `zaria sre` — SRE tool sub-commands. */
 export const sreCommand = new Command('sre').description('Manage SRE tool connections');
@@ -8,7 +9,7 @@ sreCommand
   .command('connect')
   .description('Interactively configure an SRE tool connection')
   .action(() => {
-    console.log('SRE connection wizard — coming soon.');
+    logger.info('SRE connection wizard — coming soon.');
   });
 
 /** `zaria sre test` — pings configured SRE providers. */
@@ -16,5 +17,5 @@ sreCommand
   .command('test')
   .description('Test connectivity to configured SRE tools')
   .action(() => {
-    console.log('No SRE providers configured.');
+    logger.info('No SRE providers configured.');
   });
