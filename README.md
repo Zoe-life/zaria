@@ -1,6 +1,6 @@
 # Zaria — Codebase Audit CLI
 
-> **Zaria** is an open-source, enterprise-grade CLI tool that audits web application codebases across five critical dimensions: Performance, Architecture, Scalability & Observability, Data Integrity & Race Conditions, and Long-Term Maintenance Costs. It is designed to serve developers, small organisations, and large enterprises alike — with optional integration into SRE tooling for deeper, runtime-informed analysis.
+> **Zaria** is an open-source CLI tool that audits application codebases across five critical dimensions: Performance, Architecture, Scalability & Observability, Data Integrity & Race Conditions, and Long-Term Maintenance Costs. It is designed to serve developers, small organisations, and large enterprises alike — with optional integration into SRE tooling for deeper, runtime-informed analysis.
 
 ---
 
