@@ -320,6 +320,16 @@ Zaria can optionally connect to your organisation's SRE tooling to enrich static
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Audit Dimensions Implemented (Phases 4–9)
+
+| Dimension | Engine Location | Rules |
+|---|---|---|
+| **Performance** | `src/audit/performance/` | PERF001–PERF004 |
+| **Architecture** | `src/audit/architecture/` | ARCH001–ARCH004 |
+| **Scalability & Observability** | `src/audit/scalability/` | SCALE001–SCALE004 |
+| **Data Integrity & Race Conditions** | `src/audit/integrity/` | INT001–INT004 |
+| **Long-Term Maintenance** | `src/audit/maintenance/` | MAINT001–MAINT005 |
+
 ---
 
 ## Roadmap
@@ -328,11 +338,12 @@ Zaria can optionally connect to your organisation's SRE tooling to enrich static
 |---|---|---|
 | **v0.1** | Phase 1–3 | Core CLI skeleton, configuration, basic static analysis |
 | **v0.2** | Phase 4–6 | Full five-dimension audit engine for JS/TS web apps |
-| **v0.3** | Phase 7–8 | SRE integration, Prometheus + Datadog |
-| **v0.4** | Phase 9 | HTML, JSON, SARIF report output, CI quality gates |
-| **v0.5** | Phase 10 | Plugin architecture, public plugin registry |
-| **v1.0** | Phase 11 | Production-ready, documentation, distribution (npm + binary) |
-| **v1.x** | Phase 12+ | Python codebase support, mobile app auditing, enterprise dashboard |
+| **v0.3** | Phase 7–8 | Scalability & Observability + Data Integrity & Race Conditions engines |
+| **v0.4** ✅ | Phase 9 | Long-Term Maintenance engine — cyclomatic complexity, code duplication, deprecated/outdated dependencies, missing test coverage |
+| **v0.5** | Phase 10–11 | Weighted scoring & aggregation, HTML/JSON/SARIF report output, CI quality gates |
+| **v0.6** | Phase 12 | Plugin architecture, public plugin registry |
+| **v1.0** | Phase 13 | Production-ready, documentation, distribution (npm + binary) |
+| **v1.x** | Phase 14+ | Python codebase support, mobile app auditing, enterprise dashboard |
 
 ---
 

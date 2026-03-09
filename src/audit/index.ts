@@ -1,5 +1,5 @@
 /**
- * Public API for the Zaria audit engine — Phase 4–8 barrel exports.
+ * Public API for the Zaria audit engine — Phase 4–9 barrel exports.
  */
 
 export type {
@@ -28,3 +28,6 @@ export { SCALABILITY_RULES, scoreScalability } from './scalability/scorer.js';
 
 // Phase 8 — Data Integrity & Race Conditions
 export { INTEGRITY_RULES, scoreIntegrity } from './integrity/scorer.js';
+
+// Phase 9 — Long-Term Maintenance
+export { MAINTENANCE_RULES, scoreMaintenance } from './maintenance/scorer.js';
