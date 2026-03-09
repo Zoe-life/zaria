@@ -83,7 +83,7 @@ describe('MAINT005 — Outdated Dependency', () => {
     }
   });
 
-  it('detects outdated dependency in sample-ts-app fixture (lodash ^1.x)', () => {
+  it('detects outdated dependency in sample-ts-app fixture (jest ^1.x)', () => {
     const findings = maint005.check(sampleCtx);
     expect(findings.length).toBeGreaterThan(0);
     expect(findings[0].ruleId).toBe('MAINT005');
