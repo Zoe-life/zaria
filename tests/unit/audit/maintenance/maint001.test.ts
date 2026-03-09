@@ -155,4 +155,30 @@ function b(x: Record<string, unknown>): string {
     expect(findings).toHaveLength(2);
     findings.forEach((f) => expect(f.ruleId).toBe('MAINT001'));
   });
+
+  it('detects high complexity in a non-async class method shorthand', () => {
+    // Previously missed: method shorthand `foo() {` was not matched by FUNCTION_START
+    const content = `
+class Processor {
+  process(input: Record<string, unknown>): string {
+    if (!input) return 'empty';
+    if (typeof input.a !== 'string') return 'bad a';
+    if (typeof input.b !== 'number') return 'bad b';
+    if (typeof input.c !== 'boolean') return 'bad c';
+    if (input.a.length === 0) return 'empty a';
+    if (input.b < 0 || input.b > 100) return 'out of range';
+    if (input.c && input.a === 'admin') return 'admin';
+    if (!input.c && input.b > 50) return 'elevated';
+    for (const k of Object.keys(input)) {
+      if (k.startsWith('_')) continue;
+      if (typeof input[k] === 'undefined') return 'missing';
+    }
+    return 'ok';
+  }
+}`;
+    const findings = maint001.check(ctxWithContent(content));
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings[0].ruleId).toBe('MAINT001');
+    expect(findings[0].message).toMatch(/cyclomatic complexity/i);
+  });
 });

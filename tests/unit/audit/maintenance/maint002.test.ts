@@ -160,4 +160,30 @@ function c(): boolean { return true; }`;
     expect(findings.length).toBeGreaterThan(0);
     expect(findings[0].recommendation).toBeTruthy();
   });
+
+  it('still emits a cross-file finding for file B when file A has a within-file duplicate sharing blocks with B', () => {
+    // File A contains the duplicate block twice (within-file duplicate).
+    // File B contains the same block once.
+    // Previously, the `break` after flagging file A would prevent the shared
+    // block from being recorded in blockToFirstFile, so file B was never flagged.
+    const sharedBody = `
+const payload = JSON.stringify(data);
+const encoded = Buffer.from(payload).toString('base64');
+const checksum = payload.length.toString(16);
+const timestamp = new Date().toISOString();
+const version = '1';
+return JSON.stringify({ payload, encoded, checksum, timestamp, version });`;
+
+    // File A: shared block appears twice (within-file duplicate)
+    const contentA = `${sharedBody}\n\nfunction other() {\n${sharedBody}\n}`;
+    // File B: shared block appears once (cross-file duplicate with A)
+    const contentB = sharedBody;
+
+    const findings = maint002.check(ctxWithTwoFiles(contentA, contentB));
+
+    const filesWithFindings = new Set(findings.map((f) => f.file));
+    // Both files must be flagged: A for within-file, B for cross-file
+    expect(filesWithFindings.has('/proj/src/a.ts')).toBe(true);
+    expect(filesWithFindings.has('/proj/src/b.ts')).toBe(true);
+  });
 });
