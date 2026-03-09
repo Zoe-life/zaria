@@ -98,6 +98,30 @@ describe('extractFunctionBodies', () => {
     expect(bodies[0]).toContain('obj.a');
     expect(bodies[0]).toContain('obj.b');
   });
+
+  // Regression: TypeScript inline object type literals in parameter annotations
+  // must not be mistaken for the function body opener.
+  it('extracts arrow function body when params contain an inline object type literal', () => {
+    // The `{ dir?: string }` in the param annotation is NOT the body opener.
+    // Without the fix, the extractor would enter the body at the type-literal `{`
+    // and immediately close it at the matching `}`, producing 0 captured bodies.
+    const content = ['.action(async (opts: { dir?: string }) => {', '  doSomething();', '})'].join(
+      '\n',
+    );
+    const bodies = extractFunctionBodies(content);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toContain('doSomething');
+  });
+
+  it('extracts function declaration body when params contain an inline object type literal', () => {
+    // The `{ dir?: string }` in the param annotation is NOT the body opener.
+    // Without the fix, depth tracking would start inside the type literal and
+    // the body would appear to close prematurely at its `}`.
+    const content = ['function f(opts: { dir?: string }) {', '  doSomething();', '}'].join('\n');
+    const bodies = extractFunctionBodies(content);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toContain('doSomething');
+  });
 });
 
 describe('FUNCTION_START regex', () => {
