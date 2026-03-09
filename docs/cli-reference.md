@@ -1,6 +1,6 @@
 # Zaria — CLI Reference
 
-> **Phase 3** — Configuration system implemented. Config commands are fully functional.
+> **Phase 9** — All five audit dimension engines implemented. Full static analysis available for Performance, Architecture, Scalability & Observability, Data Integrity & Race Conditions, and Long-Term Maintenance.
 
 ---
 
@@ -261,3 +261,53 @@ zaria config init
 # Validate an existing config
 zaria config validate
 ```
+
+---
+
+## Audit Rules Reference
+
+### Performance (PERF)
+
+| Rule ID | Name | Severity | Description |
+|---|---|---|---|
+| `PERF001` | N+1 Query Pattern | high | Detects ORM calls inside loops |
+| `PERF002` | Synchronous Blocking in Async Context | high | Detects sync I/O inside async functions |
+| `PERF003` | Missing Pagination | medium | Detects unbounded queries returning full result sets |
+| `PERF004` | Memory Leak Patterns | medium | Detects event listeners not cleaned up |
+
+### Architecture (ARCH)
+
+| Rule ID | Name | Severity | Description |
+|---|---|---|---|
+| `ARCH001` | Circular Dependency | high | Detects circular import chains |
+| `ARCH002` | God Module | medium | Flags files with >500 LOC and >20 exports |
+| `ARCH003` | Missing Abstraction Layer | medium | Detects route files importing ORM models directly |
+| `ARCH004` | High Import Fan-In | low | Detects files with too many inbound imports |
+
+### Scalability & Observability (SCALE)
+
+| Rule ID | Name | Severity | Description |
+|---|---|---|---|
+| `SCALE001` | Missing Structured Logging | medium | Detects raw `console.*` calls in application code |
+| `SCALE002` | Unbounded Query | high | Detects ORM queries without `.limit()` / `.take()` |
+| `SCALE003` | Stateful Singleton Pattern | medium | Detects module-level mutable state |
+| `SCALE004` | Missing Health Check Endpoint | medium | Detects HTTP apps without a `/health` route |
+
+### Data Integrity & Race Conditions (INT)
+
+| Rule ID | Name | Severity | Description |
+|---|---|---|---|
+| `INT001` | Missing Input Validation | high | Detects route handlers reading request data without validation |
+| `INT002` | Missing Transaction Boundary | high | Detects multiple ORM writes outside a transaction |
+| `INT003` | TOCTOU Vulnerability Pattern | high | Detects check-then-act race conditions |
+| `INT004` | Non-Idempotent Write Operation | medium | Detects POST handlers that don't guard against duplicate creation |
+
+### Long-Term Maintenance (MAINT)
+
+| Rule ID | Name | Severity | Description |
+|---|---|---|---|
+| `MAINT001` | High Cyclomatic Complexity | medium | Flags functions with cyclomatic complexity > 10 |
+| `MAINT002` | Code Duplication | low | Detects copy-pasted code blocks (≥6 identical consecutive lines) |
+| `MAINT003` | Deprecated Dependency | medium | Flags officially deprecated packages in `package.json` |
+| `MAINT004` | Missing Test Coverage | low | Detects source files with no corresponding test file |
+| `MAINT005` | Outdated Dependency | medium | Flags dependencies more than 2 major versions behind the latest release |
