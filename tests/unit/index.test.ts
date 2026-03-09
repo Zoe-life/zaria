@@ -17,9 +17,8 @@ describe('Zaria entry point', () => {
     expect(VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  it('should log "Zaria v<version>" when run() is called', () => {
-    run();
-    expect(consoleLogSpy).toHaveBeenCalledOnce();
-    expect(consoleLogSpy).toHaveBeenCalledWith(`Zaria v${VERSION}`);
+  it('should invoke the audit command without throwing', () => {
+    expect(() => run(['node', 'zaria', 'audit', '/tmp'])).not.toThrow();
+    expect(consoleLogSpy).toHaveBeenCalledWith('Running full audit on /tmp…');
   });
 });
