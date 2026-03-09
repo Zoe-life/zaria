@@ -8,13 +8,15 @@
 import { fileURLToPath } from 'url';
 import { resolve } from 'path';
 import { createRequire } from 'module';
+import { buildProgram } from './cli/index.js';
 
 const _require = createRequire(import.meta.url);
 const pkg = _require('../package.json') as { version: string };
 export const VERSION = pkg.version;
 
-export function run(): void {
-  console.log(`Zaria v${VERSION}`);
+export function run(argv: string[] = process.argv): void {
+  const program = buildProgram();
+  program.parse(argv);
 }
 
 /* c8 ignore next 3 -- ESM main guard: only runs when executed as entry point, not when imported */

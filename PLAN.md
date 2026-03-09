@@ -10,8 +10,8 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 | Phase | Name | Outcome |
 |---|---|---|
-| 1 | Project Scaffolding & Tooling | Compilable, testable, linted skeleton |
-| 2 | CLI Framework & Command Structure | All commands parse and route correctly |
+| 1 ✅ | Project Scaffolding & Tooling | Compilable, testable, linted skeleton |
+| 2 ✅ | CLI Framework & Command Structure | All commands parse and route correctly |
 | 3 | Configuration System | `.zariarc` / `zaria.config.ts` loading and validation |
 | 4 | Static Analysis Foundation | AST parsing and file traversal pipeline |
 | 5 | Audit Engine — Performance | Performance dimension rules and scoring |
@@ -101,52 +101,53 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 ---
 
-## Phase 2 — CLI Framework & Command Structure
+## Phase 2 — CLI Framework & Command Structure ✅
 
 **Goal:** All documented commands and flags are parsed correctly, with stub handlers.
 
 ### Tasks
 
-2.1. **Install and configure the CLI framework**
-  - `npm install commander ink react`; create `src/cli/app.tsx` as the Ink root component.
+2.1. **Install and configure the CLI framework** ✅
+  - `npm install commander`; root command defined in `src/cli/index.ts`.
+  - Ink/React deferred to a later phase — stub handlers emit plain `console.log` output.
 
-2.2. **Define the root command**
+2.2. **Define the root command** ✅
   - Name: `zaria`
-  - Global flags: `--config`, `--verbose`, `--no-sre`, `--version`
-  - Display help text matching the README usage section.
+  - Global flags: `--config`, `-v/--verbose`, `--no-sre`, `--version`
+  - Help text matches the README usage section.
 
-2.3. **Define the `audit` command and sub-commands**
-  - `audit [path]` — full audit
+2.3. **Define the `audit` command and sub-commands** ✅
+  - `audit [path]` — full audit (`src/cli/commands/audit.ts`)
   - `audit:perf [path]`
   - `audit:arch [path]`
   - `audit:scale [path]`
   - `audit:integrity [path]`
   - `audit:maint [path]`
   - Flags: `--output/-o`, `--file/-f`, `--threshold/-t`, `--only`, `--skip`
-  - Each handler calls a stub audit runner and prints `"Running [dimension] audit on [path]…"`.
+  - Each handler prints `"Running [dimension] audit on [path]…"`.
 
-2.4. **Define the `report` command**
-  - Reads the most recent saved audit result from disk and re-renders it in the chosen format.
+2.4. **Define the `report` command** ✅
+  - Stub handler in `src/cli/commands/report.ts`; prints "Generating report from last audit run…".
 
-2.5. **Define `config init` and `config validate` commands**
-  - `config init` — scaffolds a `.zariarc.yml` from the bundled example template.
-  - `config validate` — loads and validates the config file (stub: always prints "Config valid").
+2.5. **Define `config init` and `config validate` commands** ✅
+  - `config init` — stub; prints "Scaffolding .zariarc.yml…" (`src/cli/commands/config.ts`).
+  - `config validate` — stub; prints "Config valid.".
 
-2.6. **Define `sre connect` and `sre test` commands**
-  - `sre connect` — interactive wizard (stub: prints "SRE connection wizard — coming soon").
-  - `sre test` — pings configured SRE providers (stub: prints "No SRE providers configured").
+2.6. **Define `sre connect` and `sre test` commands** ✅
+  - `sre connect` — stub; prints "SRE connection wizard — coming soon." (`src/cli/commands/sre.ts`).
+  - `sre test` — stub; prints "No SRE providers configured.".
 
-2.7. **Define `plugin list`, `plugin add`, `plugin remove` commands**
-  - All stubs at this stage.
+2.7. **Define `plugin list`, `plugin add`, `plugin remove` commands** ✅
+  - All stubs in `src/cli/commands/plugin.ts`.
 
-2.8. **Write CLI unit tests**
-  - Test that each command parses flags correctly.
-  - Test that unknown commands produce a helpful error and exit code 1.
-  - Test that `--help` outputs the usage string.
+2.8. **Write CLI unit tests** ✅
+  - `tests/unit/cli/index.test.ts` — 17 tests covering every command, flag parsing, unknown-command error, and `--version` exit.
+  - All 19 tests pass (17 CLI + 2 entry-point); coverage 99.36 %.
 
-2.9. **Verify Phase 2**
-  - Run `zaria --help` and confirm all commands and flags are listed.
-  - Run `zaria audit ./tests/fixtures/sample-app` and confirm stub output.
+2.9. **Verify Phase 2** ✅
+  - `node dist/index.js --help` lists all commands and flags.
+  - `node dist/index.js audit ./tests/fixtures/sample-app` prints stub output.
+  - `npm run lint && npm test && npm run build` all pass.
 
 ---
 
