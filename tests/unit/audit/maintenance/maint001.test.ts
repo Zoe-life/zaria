@@ -118,8 +118,8 @@ function branchy(x: Record<string, unknown>): string {
     expect(findings[0].recommendation).toBeTruthy();
   });
 
-  it('emits at most one finding per file', () => {
-    // Two complex functions in the same file — should produce ≤ 1 finding per file
+  it('emits one finding per complex function body', () => {
+    // Two complex functions in the same file — should produce one finding each
     const content = `
 function a(x: Record<string, unknown>): string {
   if (!x) return 'a';
@@ -152,6 +152,7 @@ function b(x: Record<string, unknown>): string {
   return 'z';
 }`;
     const findings = maint001.check(ctxWithContent(content));
-    expect(findings).toHaveLength(1);
+    expect(findings).toHaveLength(2);
+    findings.forEach((f) => expect(f.ruleId).toBe('MAINT001'));
   });
 });
