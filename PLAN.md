@@ -2,7 +2,7 @@
 
 This document outlines the complete, step-by-step build plan for the Zaria enterprise-grade CLI audit tool, from project initialisation through to production release. Each phase is broken into concrete, actionable tasks.
 
-> **Prerequisite:** A tech stack must be confirmed before Phase 1 begins. See the [Proposed Tech Stacks](./README.md#proposed-tech-stacks) section in the README and provide your preference (Option A: Node.js/TypeScript or Option B: Go).
+> **Tech Stack:** Option A — Node.js / TypeScript (confirmed).
 
 ---
 
@@ -31,14 +31,14 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 ---
 
-## Phase 1 — Project Scaffolding & Tooling
+## Phase 1 — Project Scaffolding & Tooling ✅
 
 **Goal:** A working, compilable project skeleton that all future phases can build on.
 
 ### Tasks
 
-1.1. **Initialise repository structure**
-  - Create the top-level directory layout:
+1.1. **Initialise repository structure** ✅
+  - Created directory layout:
     ```
     zaria/
     ├── src/
@@ -54,7 +54,7 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
     │   ├── report/        # Report formatters
     │   ├── plugin/        # Plugin loader and registry
     │   ├── scorer/        # Scoring and aggregation
-    │   └── index.ts       # Entry point (Option A) / main.go (Option B)
+    │   └── index.ts       # Entry point
     ├── tests/
     │   ├── unit/
     │   ├── integration/
@@ -63,47 +63,41 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
     ├── .zariarc.example.yml
     ├── README.md
     ├── PLAN.md
-    └── package.json / go.mod
+    └── package.json
     ```
 
-1.2. **Configure the package manager**
-  - **Option A:** `npm init`, set `"type": "module"`, configure `"bin": { "zaria": "./dist/index.js" }`
-  - **Option B:** `go mod init github.com/zoe-life/zaria`
+1.2. **Configure the package manager** ✅
+  - `package.json` with `"type": "module"`, `"bin": { "zaria": "./dist/index.js" }`, and npm scripts.
 
-1.3. **Configure TypeScript / Go build tooling**
-  - **Option A:** Install and configure TypeScript (`tsconfig.json` with `"module": "NodeNext"`, `"target": "ES2022"`, `"strict": true`), configure `tsx` for development and `tsc` for production builds.
-  - **Option B:** Configure `Makefile` with `build`, `test`, `lint` targets; set up `goreleaser.yml` stub.
+1.3. **Configure TypeScript / Go build tooling** ✅
+  - `tsconfig.json` with `"module": "NodeNext"`, `"target": "ES2022"`, `"strict": true`.
+  - `tsx` for development (`npm run dev`), `tsc` for production builds (`npm run build`).
 
-1.4. **Configure linting and formatting**
-  - **Option A:** ESLint (with `@typescript-eslint/eslint-plugin`) + Prettier. Add `.eslintrc.json` and `.prettierrc`.
-  - **Option B:** `golangci-lint` with `.golangci.yml`; `gofmt` enforced in CI.
+1.4. **Configure linting and formatting** ✅
+  - `eslint.config.js` (flat config) with `@typescript-eslint/eslint-plugin`.
+  - `.prettierrc` with consistent formatting rules.
+  - `npm run lint` and `npm run format` scripts.
 
-1.5. **Configure the test runner**
-  - **Option A:** Vitest — `vitest.config.ts` with coverage via `@vitest/coverage-v8`. Add `test`, `test:coverage` npm scripts.
-  - **Option B:** Built-in `go test` with `testify`; configure `go test ./...` in Makefile.
+1.5. **Configure the test runner** ✅
+  - `vitest.config.ts` with `@vitest/coverage-v8` for coverage.
+  - `npm run test` and `npm run test:coverage` scripts.
 
-1.6. **Set up Git hooks**
-  - **Option A:** `husky` + `lint-staged` — run ESLint and Prettier on staged files pre-commit; run tests pre-push.
-  - **Option B:** `pre-commit` hook via a shell script invoking `golangci-lint`.
+1.6. **Set up Git hooks** ✅
+  - `husky` with `.husky/pre-commit` running `lint-staged`.
+  - `lint-staged` runs ESLint + Prettier on staged `.ts` files.
+  - `.husky/pre-push` runs the test suite before push.
 
-1.7. **Configure CI/CD pipeline (GitHub Actions)**
-  - Create `.github/workflows/ci.yml`:
-    - Trigger on pull requests and pushes to `main`.
-    - Jobs: `lint`, `test`, `build`.
-    - Use matrix strategy for Node LTS versions (Option A) or Go versions (Option B).
-  - Create `.github/workflows/release.yml`:
-    - Trigger on version tags (`v*`).
-    - Build and publish to npm or GitHub Releases + Homebrew tap.
+1.7. **Configure CI/CD pipeline (GitHub Actions)** ✅
+  - `.github/workflows/ci.yml` — lint, test, build on PRs and pushes to `main` (Node 20.x, 22.x matrix).
+  - `.github/workflows/release.yml` — build and publish to npm on `v*` tags.
 
-1.8. **Write the entry point**
-  - Create a minimal `src/index.ts` (or `main.go`) that prints `Zaria v0.0.1` and exits cleanly.
-  - Verify it builds and runs.
+1.8. **Write the entry point** ✅
+  - `src/index.ts` prints `Zaria v0.0.1` and exits cleanly.
 
-1.9. **Verify Phase 1**
-  - `npm run build && node dist/index.js` outputs version (Option A).
-  - `go build ./... && ./zaria` outputs version (Option B).
-  - `npm run lint` / `golangci-lint run` passes with zero errors.
-  - `npm test` / `go test ./...` passes (zero tests, but setup is verified).
+1.9. **Verify Phase 1** ✅
+  - `npm run build && node dist/index.js` outputs `Zaria v0.0.1`.
+  - `npm run lint` passes with zero errors.
+  - `npm test` passes (framework verified, skeleton test in place).
 
 ---
 
@@ -114,8 +108,7 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 ### Tasks
 
 2.1. **Install and configure the CLI framework**
-  - **Option A:** `npm install commander ink react`; create `src/cli/app.tsx` as the Ink root component.
-  - **Option B:** `go get github.com/spf13/cobra github.com/charmbracelet/bubbletea`; create `cmd/root.go`.
+  - `npm install commander ink react`; create `src/cli/app.tsx` as the Ink root component.
 
 2.2. **Define the root command**
   - Name: `zaria`
@@ -164,12 +157,11 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 ### Tasks
 
 3.1. **Define the configuration schema**
-  - Create a TypeScript interface / Go struct for the full config object (project, audit dimensions, thresholds, ignore lists, plugins, sre, output).
-  - Use a schema validation library (Zod for Option A, `go-playground/validator` for Option B).
+  - Create a TypeScript interface for the full config object (project, audit dimensions, thresholds, ignore lists, plugins, sre, output).
+  - Use a schema validation library (Zod).
 
 3.2. **Implement config file discovery**
-  - **Option A:** Use `cosmiconfig` to search for `.zariarc`, `.zariarc.json`, `.zariarc.yml`, `.zariarc.yaml`, `zaria.config.ts`, or `zaria` key in `package.json`.
-  - **Option B:** Use Viper to search for `.zariarc.yaml`, `.zariarc.toml`, environment variables prefixed `ZARIA_`.
+  - Use `cosmiconfig` to search for `.zariarc`, `.zariarc.json`, `.zariarc.yml`, `.zariarc.yaml`, `zaria.config.ts`, or `zaria` key in `package.json`.
 
 3.3. **Implement config merging**
   - Priority order (highest to lowest): CLI flags → environment variables → config file → built-in defaults.
@@ -202,451 +194,298 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 ## Phase 4 — Static Analysis Foundation
 
-**Goal:** File traversal, language detection, and AST parsing pipeline that all audit dimensions will use.
+**Goal:** A reusable pipeline that parses files and exposes AST/metadata to audit engines.
 
 ### Tasks
 
-4.1. **Implement project file walker**
-  - Recursively walk the project path.
-  - Respect `.gitignore` and the `ignore.paths` config.
-  - Classify files by type: source, test, config, asset, documentation.
-  - Build a `FileManifest` object: list of file entries with path, language, size, and last-modified date.
+4.1. **Implement the file traversal engine**
+  - Recursively walks a project directory, respecting `.gitignore` and `ignore.paths` config.
+  - Returns a list of `SourceFile` objects: `{ path, language, size, lastModified }`.
 
-4.2. **Implement language detection**
-  - Detect: JavaScript, TypeScript, Python, Go, CSS/SCSS, HTML, JSON/YAML (config files).
-  - Use file extension + optional shebang/content sniffing.
+4.2. **Implement the TypeScript/JavaScript AST parser**
+  - Use `ts-morph` to parse `.ts`, `.tsx`, `.js`, `.jsx` files into an AST.
+  - Expose a `ParsedFile` type: `{ sourceFile: SourceFile, ast: Node, imports: Import[], exports: Export[] }`.
 
-4.3. **Implement AST parser adapter**
-  - **Option A:** Use `ts-morph` for TypeScript/JavaScript; `@babel/parser` as fallback for complex JSX.
-  - **Option B:** Use `tree-sitter` with language grammars for JS/TS, Python, Go.
-  - Define a normalised `ParsedFile` interface that wraps the raw AST with helper methods (e.g., `findFunctions()`, `findImports()`, `findCallExpressions()`).
+4.3. **Implement basic metadata extraction**
+  - Extract: file LOC, function count, class count, import graph edges.
 
-4.4. **Implement dependency graph builder**
-  - Parse all import/require statements across the codebase.
-  - Build a directed graph of module dependencies.
-  - Detect and report circular dependency chains.
-  - **Option A:** Integrate with `madge` for additional analysis.
+4.4. **Build the analysis context object**
+  - Aggregate all `ParsedFile` instances into an `AnalysisContext` passed to all audit engines.
+  - Include project-level metadata: total LOC, language distribution, detected framework.
 
-4.5. **Implement a rule runner framework**
-  - Define a `Rule` interface: `{ id, name, dimension, severity, check(parsedFile, context) => Finding[] }`.
-  - Define a `Finding` interface: `{ ruleId, severity, filePath, line, column, message, recommendation, learnMoreUrl }`.
-  - Implement a `RuleRunner` that: loads rules for the requested dimensions, runs them against each parsed file in parallel, collects all findings.
+4.5. **Write unit tests for the file traversal and parser**
+  - Use fixture projects in `tests/fixtures/`.
 
-4.6. **Implement finding deduplication and suppression**
-  - Deduplicate identical findings across files.
-  - Support inline suppression comments (e.g., `// zaria-ignore PERF001`).
-  - Support file-level and project-level suppression via config.
-
-4.7. **Write foundation unit tests**
-  - Test file walker with mock filesystem.
-  - Test language detection for all supported extensions.
-  - Test AST parsing produces expected node types for fixture files.
-  - Test rule runner calls rules and collects findings correctly.
-
-4.8. **Create test fixtures**
-  - Add `tests/fixtures/sample-ts-app/` — a small but representative TypeScript web app with known issues seeded for each dimension.
-  - Add `tests/fixtures/clean-app/` — a well-structured app that should produce zero or minimal findings.
-
-4.9. **Verify Phase 4**
-  - Run the file walker on a real project and inspect the manifest.
-  - Parse a TypeScript file and print the discovered function names.
+4.6. **Verify Phase 4**
+  - Run against `tests/fixtures/sample-ts-app` and confirm parsed file count and import graph.
 
 ---
 
-## Phase 5 — Audit Engine: Performance
+## Phase 5 — Audit Engine — Performance
 
-**Goal:** Implement all planned Performance audit rules.
+**Goal:** Performance dimension rules and scoring.
 
 ### Tasks
 
-5.1. **Implement rule PERF001 — N+1 Query Detection**
-  - Detect database queries inside loops (ORM call patterns within `for`/`while`/`Array.forEach`).
-  - Support: Prisma, TypeORM, Sequelize, Mongoose, raw SQL template literals (Option A); GORM, database/sql (Option B).
+5.1. **Define the `Rule` and `Finding` types**
+  - `Rule`: `{ id, name, description, severity, check(context): Finding[] }`
+  - `Finding`: `{ ruleId, severity, message, file, line, column, recommendation }`
 
-5.2. **Implement rule PERF002 — Missing Database Index Hints**
-  - Detect queries that filter or sort on fields not decorated with `@Index` / migration index definitions.
-  - Flag when `findMany`/`findAll` calls use fields with no corresponding index in schema files.
+5.2. **Implement PERF001 — N+1 Query Pattern Detection**
+  - Detect database calls (ORM method calls) inside loops.
 
-5.3. **Implement rule PERF003 — Synchronous Blocking in Async Context**
-  - Detect `fs.readFileSync`, `execSync`, `JSON.parse` on large data, synchronous crypto in async functions / event loop.
-  - Flag `time.Sleep` in request handlers (Option B).
+5.3. **Implement PERF002 — Synchronous Blocking in Async Context**
+  - Detect `fs.readFileSync`, `execSync`, etc. inside `async` functions.
 
-5.4. **Implement rule PERF004 — Memory Leak Patterns**
-  - Detect event listeners added without corresponding removal (e.g., `addEventListener` without `removeEventListener` in cleanup).
-  - Detect subscriptions/intervals created in component mount without cleanup.
-  - Flag growing in-memory caches with no eviction policy.
+5.4. **Implement PERF003 — Missing Caching Strategy**
+  - Flag HTTP handlers with no caching headers or cache-control middleware.
 
-5.5. **Implement rule PERF005 — Missing Caching Strategy**
-  - Detect expensive computations or API calls with no memoisation or cache layer.
-  - Flag database reads in hot paths with no Redis/in-memory cache.
+5.5. **Implement PERF004 — Memory Leak Patterns**
+  - Detect `addEventListener` without corresponding `removeEventListener`.
 
-5.6. **Implement rule PERF006 — Unbounded Data Fetching**
-  - Detect queries with no `LIMIT`/`take`/`limit` clause.
-  - Flag `findAll()` / `SELECT *` without pagination.
+5.6. **Implement dimension scorer for Performance**
+  - Starts at 100, deduct per-severity finding impact.
 
-5.7. **Implement rule PERF007 — Large Bundle / Import Side Effects** _(frontend projects)_
-  - Detect full library imports where tree-shakeable sub-imports are available (e.g., `import _ from 'lodash'` vs `import debounce from 'lodash/debounce'`).
+5.7. **Write unit tests for each Performance rule**
+  - Use fixture files that trigger each rule.
+  - Use clean fixture files that produce zero findings.
 
-5.8. **Write Performance audit tests**
-  - Unit test each rule with minimal AST fixtures that trigger and do not trigger the rule.
-  - Integration test the full Performance engine against the seeded `sample-ts-app` fixture.
-
-5.9. **Verify Phase 5**
-  - Run `zaria audit:perf ./tests/fixtures/sample-ts-app` and confirm expected findings appear.
-  - Run `zaria audit:perf ./tests/fixtures/clean-app` and confirm zero or low findings.
+5.8. **Verify Phase 5**
+  - Seeded issues in `sample-ts-app` are all caught.
+  - `clean-app` produces zero Performance findings.
 
 ---
 
-## Phase 6 — Audit Engine: Architecture
+## Phase 6 — Audit Engine — Architecture
 
-**Goal:** Implement all planned Architecture audit rules.
+**Goal:** Architecture dimension rules and scoring.
 
 ### Tasks
 
-6.1. **Implement rule ARCH001 — Circular Dependencies**
-  - Use the dependency graph built in Phase 4.
-  - Report each cycle with the full import chain.
+6.1. **Implement ARCH001 — Circular Dependency Detection**
+  - Use the import graph to detect cycles (DFS with back-edge detection).
 
-6.2. **Implement rule ARCH002 — God Module / Large File**
-  - Flag files exceeding a configurable line count threshold (default: 500 lines).
-  - Flag modules with more than a configurable number of exports (default: 20).
+6.2. **Implement ARCH002 — God Module Detection**
+  - Flag files with >500 LOC and >20 exports as potential god modules.
 
-6.3. **Implement rule ARCH003 — Layer Boundary Violations**
-  - Detect direct database calls in route/controller layer without a service/repository intermediary.
-  - Detect business logic in data access layer.
-  - Configurable: user defines layer mapping in `.zariarc`.
+6.3. **Implement ARCH003 — Missing Abstraction Layer**
+  - Detect direct database calls from presentation layer files (e.g., route handlers importing ORM models directly).
 
-6.4. **Implement rule ARCH004 — Tight Coupling / Missing Abstraction**
-  - Detect `new ConcreteClass()` inside business logic where an interface/factory should be used.
-  - Flag direct module-to-module imports that bypass the intended public API.
+6.4. **Implement ARCH004 — Tight Coupling Detection**
+  - Flag files with >15 unique imports as highly coupled.
 
-6.5. **Implement rule ARCH005 — API Design Inconsistency**
-  - For REST APIs: detect mixed HTTP verb usage (e.g., GET used for state-mutating actions), inconsistent URL naming conventions.
-  - For GraphQL: detect resolvers with no error handling, N+1 in resolvers without DataLoader.
+6.5. **Implement dimension scorer for Architecture**
 
-6.6. **Implement rule ARCH006 — Missing Error Boundary**
-  - Detect async functions that do not have try/catch or `.catch()`.
-  - Detect express/fastify route handlers with no error propagation to the next middleware.
+6.6. **Write unit tests for each Architecture rule**
 
-6.7. **Write Architecture audit tests**
-  - Unit test each rule.
-  - Integration test against fixtures.
-
-6.8. **Verify Phase 6**
-  - Run `zaria audit:arch` on the seeded fixture and confirm all seeded architecture issues are detected.
+6.7. **Verify Phase 6**
 
 ---
 
-## Phase 7 — Audit Engine: Scalability & Observability
+## Phase 7 — Audit Engine — Scalability & Observability
 
-**Goal:** Implement all planned Scalability & Observability audit rules.
+**Goal:** Scalability dimension rules and scoring.
 
 ### Tasks
 
-7.1. **Implement rule SCALE001 — Stateful Singleton Patterns**
-  - Detect in-memory state stored in module-level variables that would not survive horizontal scaling.
-  - Flag session state not backed by a distributed store.
+7.1. **Implement SCALE001 — Missing Structured Logging**
+  - Detect `console.log` usage outside of the logger module.
 
-7.2. **Implement rule SCALE002 — Missing Structured Logging**
-  - Detect `console.log` / `fmt.Println` used in place of a structured logger.
-  - Verify log statements include correlation IDs / request IDs in web request handlers.
+7.2. **Implement SCALE002 — Unbounded Query**
+  - Detect ORM queries without `.limit()` or `.take()`.
 
-7.3. **Implement rule SCALE003 — Missing Distributed Tracing**
-  - Detect HTTP client calls and database calls with no trace span instrumentation.
-  - Check for OpenTelemetry or equivalent SDK initialisation.
+7.3. **Implement SCALE003 — Stateful Singleton Pattern**
+  - Detect module-level mutable state that prevents horizontal scaling.
 
-7.4. **Implement rule SCALE004 — Missing Health Check Endpoints**
-  - Detect express/fastify/gin/echo/FastAPI apps with no `/health`, `/ready`, or `/live` route.
+7.4. **Implement SCALE004 — Missing Health Check Endpoint**
+  - Detect Express/Fastify/Hapi apps without a `/health` or `/healthz` route.
 
-7.5. **Implement rule SCALE005 — Unbounded Queue / Job Processing**
-  - Detect job queue consumers with no concurrency limit or backpressure mechanism.
-  - Flag missing dead-letter queue configuration.
+7.5. **Implement dimension scorer for Scalability**
 
-7.6. **Implement rule SCALE006 — Hard-Coded Configuration**
-  - Detect hard-coded URLs, ports, credentials, feature flags.
-  - Flag values that should come from environment variables or a config service.
+7.6. **Write unit tests for each Scalability rule**
 
-7.7. **Write Scalability & Observability audit tests**
-
-7.8. **Verify Phase 7**
+7.7. **Verify Phase 7**
 
 ---
 
-## Phase 8 — Audit Engine: Data Integrity & Race Conditions
+## Phase 8 — Audit Engine — Data Integrity & Race Conditions
 
-**Goal:** Implement all planned Data Integrity & Race Conditions audit rules.
+**Goal:** Data integrity dimension rules and scoring.
 
 ### Tasks
 
-8.1. **Implement rule INT001 — Unguarded Shared State Mutation**
-  - Detect writes to shared module-level variables from multiple async contexts without synchronisation.
-  - Flag missing mutex/lock patterns around shared data structures (Option B: `sync.Mutex`).
+8.1. **Implement INT001 — Missing Input Validation**
+  - Detect route handlers that read `req.body` or `req.query` without validation middleware.
 
-8.2. **Implement rule INT002 — Missing Transaction Boundaries**
-  - Detect sequences of two or more write operations (DB insert/update/delete) with no enclosing transaction.
-  - Flag Prisma `$transaction`, TypeORM `QueryRunner`, or raw `BEGIN/COMMIT` patterns.
+8.2. **Implement INT002 — Missing Transaction Boundary**
+  - Detect multi-step ORM write operations outside a transaction.
 
-8.3. **Implement rule INT003 — Missing Rollback Logic**
-  - Detect transactions that have no explicit rollback in error paths.
+8.3. **Implement INT003 — TOCTOU Vulnerability Pattern**
+  - Detect check-then-act patterns on file system or database without atomic operations.
 
-8.4. **Implement rule INT004 — TOCTOU Vulnerabilities**
-  - Detect patterns where a resource is checked for existence and then used in separate operations without an atomic guarantee (e.g., check-then-act on file system or DB row).
+8.4. **Implement INT004 — Non-Idempotent Write Endpoint**
+  - Detect POST handlers that do not check for existing resources before creating.
 
-8.5. **Implement rule INT005 — Missing Input Validation**
-  - Detect route handlers that use request body / query params without schema validation (Zod, Joi, class-validator, Pydantic, etc.).
+8.5. **Implement dimension scorer for Data Integrity**
 
-8.6. **Implement rule INT006 — Non-Idempotent Critical Writes**
-  - Detect API endpoints that create resources without idempotency keys.
-  - Flag payment / order mutation endpoints missing idempotency handling.
+8.6. **Write unit tests for each Data Integrity rule**
 
-8.7. **Write Data Integrity audit tests**
-
-8.8. **Verify Phase 8**
+8.7. **Verify Phase 8**
 
 ---
 
-## Phase 9 — Audit Engine: Long-Term Maintenance
+## Phase 9 — Audit Engine — Long-Term Maintenance
 
-**Goal:** Implement all planned Long-Term Maintenance audit rules.
+**Goal:** Maintenance dimension rules and scoring.
 
 ### Tasks
 
-9.1. **Implement rule MAINT001 — High Cyclomatic Complexity**
-  - Calculate cyclomatic complexity for every function/method.
-  - Flag functions exceeding a configurable threshold (default: 10).
+9.1. **Implement MAINT001 — High Cyclomatic Complexity**
+  - Flag functions with cyclomatic complexity > 10.
 
-9.2. **Implement rule MAINT002 — High Cognitive Complexity**
-  - Implement cognitive complexity scoring (nesting depth weighted by construct type).
-  - Flag functions exceeding a configurable threshold (default: 15).
+9.2. **Implement MAINT002 — Code Duplication**
+  - Detect duplicate code blocks using token-based hashing.
 
-9.3. **Implement rule MAINT003 — Code Duplication**
-  - Detect copy-pasted code blocks (token-based similarity matching).
-  - Report duplication percentage and exact locations.
+9.3. **Implement MAINT003 — Deprecated Dependency**
+  - Cross-reference `package.json` dependencies against npm deprecation notices.
 
-9.4. **Implement rule MAINT004 — Low Test Coverage**
-  - Parse coverage reports (Istanbul/V8 for JS/TS; `go test -coverprofile` for Go) if available.
-  - Flag files and functions with coverage below configurable thresholds.
-  - If no coverage data exists, flag the absence of a coverage setup.
-
-9.5. **Implement rule MAINT005 — Missing or Inadequate Tests**
+9.4. **Implement MAINT004 — Missing Test Coverage**
   - Detect source files with no corresponding test file.
-  - Detect test files with no assertions (empty tests).
-  - Flag imbalance between unit and integration tests.
 
-9.6. **Implement rule MAINT006 — Outdated Dependencies**
-  - Read `package.json` / `go.mod` / `requirements.txt`.
-  - Query npm registry / Go proxy / PyPI for latest versions.
-  - Flag dependencies that are more than one major version behind.
+9.5. **Implement MAINT005 — Outdated Dependency**
+  - Flag dependencies more than 2 major versions behind latest.
 
-9.7. **Implement rule MAINT007 — Known CVEs in Dependencies**
-  - Run `npm audit` / `go vuln` / `pip-audit` as a subprocess and parse output.
-  - Map CVE findings to Zaria findings with severity mapping.
+9.6. **Implement dimension scorer for Maintenance**
 
-9.8. **Implement rule MAINT008 — Missing Documentation**
-  - Detect exported functions/classes/types without JSDoc / GoDoc / docstring comments.
-  - Flag missing `README.md` in packages/modules that expose a public API.
+9.7. **Write unit tests for each Maintenance rule**
 
-9.9. **Implement rule MAINT009 — No Architectural Decision Records**
-  - Check for the presence of an `docs/adr/` or `adr/` directory.
-  - Flag its absence as a low-severity finding with a recommendation.
-
-9.10. **Write Maintenance audit tests**
-
-9.11. **Verify Phase 9**
-  - Run the full five-dimension audit on `sample-ts-app` and confirm an overall score that reflects the seeded issues.
+9.8. **Verify Phase 9**
 
 ---
 
 ## Phase 10 — Scoring & Aggregation
 
-**Goal:** Produce a deterministic, weighted overall score and per-dimension scores.
+**Goal:** Weighted overall score, dimension scores.
 
 ### Tasks
 
-10.1. **Define the scoring model**
-  - Each finding reduces a dimension's score: `critical = -20`, `high = -10`, `medium = -5`, `low = -2` (configurable).
-  - Dimension score is clamped to [0, 100].
-  - Overall score = weighted average of dimension scores (default weights configurable in `.zariarc`).
-  - Default weights: Performance 20%, Architecture 25%, Scalability 20%, Integrity 20%, Maintenance 15%.
+10.1. **Define scoring weights**
+  - Performance: 25%, Architecture: 25%, Scalability: 20%, Integrity: 20%, Maintenance: 10%.
 
-10.2. **Implement the Scorer module**
-  - Input: list of `Finding[]` and config.
-  - Output: `AuditResult` — per-dimension scores, overall score, grade (A–F), finding summary.
+10.2. **Implement `scorer/aggregate.ts`**
+  - Accept all five dimension scores and produce a weighted overall score (0–100).
 
-10.3. **Implement score trend tracking**
-  - Persist `AuditResult` to `~/.zaria/history/<project-hash>/<timestamp>.json`.
-  - Calculate score delta vs. previous run.
-  - Display trend arrows (↑ ↓ →) in terminal output.
+10.3. **Implement grade thresholds**
+  - A: 90–100, B: 80–89, C: 70–79, D: 60–69, F: 0–59.
 
-10.4. **Write Scorer unit tests**
-  - Test score calculation with known finding sets.
-  - Test boundary cases (zero findings = 100, catastrophic findings = 0).
+10.4. **Write unit tests for the scorer**
+
+10.5. **Verify Phase 10**
 
 ---
 
 ## Phase 11 — Report Output System
 
-**Goal:** All documented report formats implemented and tested.
+**Goal:** Terminal, JSON, HTML, Markdown, SARIF.
 
 ### Tasks
 
-11.1. **Implement Terminal Reporter**
-  - Header: project name, overall score, grade, trend.
-  - Per-dimension section: score bar, finding count by severity.
-  - Findings table: sorted by severity, with file path, line, message, recommendation.
-  - Footer: total run time, SRE data status, config path.
-  - **Option A:** Use Ink + `cli-table3` + `chalk`.
-  - **Option B:** Use `lipgloss` + `bubbletea`.
+11.1. **Implement `report/terminal.ts`** — colourised, tabular terminal output using `chalk` and `cli-table3`.
 
-11.2. **Implement JSON Reporter**
-  - Output the full `AuditResult` object as pretty-printed JSON.
-  - Include metadata: version, timestamp, project path, config used.
+11.2. **Implement `report/json.ts`** — machine-readable JSON output.
 
-11.3. **Implement Markdown Reporter**
-  - GitHub-flavoured Markdown with collapsible sections per dimension.
-  - Suitable for automated PR comment posting.
+11.3. **Implement `report/markdown.ts`** — GitHub/GitLab PR comment format.
 
-11.4. **Implement HTML Reporter**
-  - Self-contained single-file HTML with embedded CSS.
-  - Interactive: collapsible sections, severity filter, search.
-  - No external CDN dependencies (works offline).
+11.4. **Implement `report/html.ts`** — self-contained HTML report.
 
-11.5. **Implement SARIF Reporter**
-  - SARIF 2.1.0 schema compliant output.
-  - Map Zaria findings to SARIF `result` objects with `location`, `level`, and `message`.
-  - Enable GitHub Code Scanning integration.
+11.5. **Implement `report/sarif.ts`** — SARIF 2.1.0 format for GitHub Code Scanning.
 
-11.6. **Implement `report` command**
-  - Load the most recent `AuditResult` from history.
-  - Re-render in any requested output format.
+11.6. **Implement `report/index.ts`** — factory that picks the correct formatter based on config.
 
-11.7. **Implement `--file` output flag**
-  - Write report to a specified file path instead of stdout.
+11.7. **Write unit tests for each reporter**
 
-11.8. **Write Reporter tests**
-  - Test each reporter with a known `AuditResult` fixture.
-  - Validate JSON output against schema.
-  - Validate SARIF output against the SARIF schema.
+11.8. **Verify Phase 11**
 
 ---
 
 ## Phase 12 — SRE Tool Integration
 
-**Goal:** Optional connectivity to SRE providers that enriches audit findings with runtime data.
+**Goal:** Optional Prometheus, Datadog, Grafana, etc.
 
 ### Tasks
 
-12.1. **Define the SRE Provider interface**
-  - `SreProvider { connect(), testConnection(), fetchErrorRate(endpoint), fetchLatencyP99(endpoint), fetchIncidentHistory(dateRange) }`
+12.1. **Define the `SreProvider` interface** — `{ name, test(): Promise<boolean>, fetchMetrics(query): Promise<Metric[]> }`.
 
-12.2. **Implement SRE credential storage**
-  - Use the system keychain to store tokens/API keys.
-  - **Option A:** `keytar` npm package.
-  - **Option B:** `zalando/go-keyring`.
-  - Never write credentials to disk in plaintext.
+12.2. **Implement `sre/prometheus.ts`** — PromQL query adapter.
 
-12.3. **Implement the `sre connect` interactive wizard**
-  - Select provider type.
-  - Enter URL and authentication details.
-  - Test connection immediately.
-  - Store credentials in keychain.
-  - Write non-sensitive config to `.zariarc`.
+12.3. **Implement `sre/datadog.ts`** — Datadog Metrics API adapter.
 
-12.4. **Implement Prometheus adapter**
-  - Authenticate via bearer token or basic auth.
-  - Query: error rate per endpoint (5xx / total), p50/p95/p99 latency, CPU/memory saturation.
-  - Map Prometheus metric labels to source code files via configured label selectors.
+12.4. **Implement `sre/grafana.ts`** — Grafana HTTP API adapter.
 
-12.5. **Implement Datadog adapter**
-  - Authenticate via API key + App key.
-  - Query: APM service error rate, trace latency, log error stream, SLO burn rate.
+12.5. **Implement `sre/connect.ts`** — interactive provider setup wizard.
 
-12.6. **Implement Grafana / Loki adapter**
-  - Query Grafana datasources via the HTTP API.
-  - Run LogQL queries on Loki for error log streams.
+12.6. **Integrate SRE data into audit engines** — enrich static findings with runtime error rates and latency data.
 
-12.7. **Implement SRE data correlator**
-  - Match SRE metrics to static findings by endpoint path, service name, or file path.
-  - Boost finding severity when the flagged code path has high error rates or is in active incident blast radius.
-  - Add an `sreContext` field to enriched findings.
+12.7. **Write unit tests with mocked SRE providers**
 
-12.8. **Implement audit log for SRE queries**
-  - Write every external API call to `~/.zaria/sre-audit.log` with timestamp, provider, query, response status.
-  - Never log response bodies that may contain sensitive data.
-
-12.9. **Write SRE integration tests**
-  - Mock the HTTP calls for each provider.
-  - Test correlation logic with known metric + finding fixtures.
-  - Test that `--no-sre` flag completely disables all SRE calls.
+12.8. **Verify Phase 12**
 
 ---
 
 ## Phase 13 — CI/CD Integration
 
-**Goal:** Zaria works as a first-class citizen in CI/CD pipelines.
+**Goal:** Quality gates, exit codes, GitHub Actions.
 
 ### Tasks
 
-13.1. **Implement exit code logic**
-  - Exit `0` — audit passed (score ≥ threshold).
-  - Exit `1` — audit failed (score < threshold or critical findings present).
-  - Exit `2` — Zaria internal error (configuration error, parse failure, etc.).
+13.1. **Implement exit code logic** — exit 1 if overall score < `--threshold`.
 
-13.2. **Implement the `--threshold` flag**
-  - Compare overall score against the threshold.
-  - Print a clear pass/fail banner in terminal output.
+13.2. **Implement `--threshold` per-dimension** — exit 1 if any dimension breaches its configured threshold.
 
-13.3. **Publish a GitHub Action**
-  - Create `.github/actions/zaria-audit/action.yml`.
-  - Inputs: `path`, `threshold`, `output`, `sre-enabled`.
-  - Outputs: `score`, `grade`, `passed`.
-  - Post a Markdown summary to the GitHub Actions job summary page.
+13.3. **Create GitHub Actions action.yml** — `uses: zoe-life/zaria@v1` for zero-config CI integration.
 
-13.4. **Publish GitLab CI template** _(stretch goal)_
-  - Create a `.gitlab-ci.yml` template snippet.
+13.4. **Create example workflow** — `.github/zaria-example.yml` for users to copy.
 
-13.5. **Document CI integration**
-  - Add `docs/ci-integration.md` with examples for GitHub Actions, GitLab CI, CircleCI, and Jenkins.
+13.5. **Write integration tests for exit codes**
+
+13.6. **Verify Phase 13**
 
 ---
 
 ## Phase 14 — Plugin Architecture
 
-**Goal:** Third parties can extend Zaria with custom audit rules without forking the project.
+**Goal:** Plugin loader, typed interface, registry.
 
 ### Tasks
 
-14.1. **Define the Plugin API**
-  - **Option A:** TypeScript interface published as `@zaria/plugin-api` npm package.
-    ```typescript
-    export interface ZariaPlugin {
-      name: string;
-      version: string;
-      rules: Rule[];
-      onInit?(context: PluginContext): Promise<void>;
-      onAuditComplete?(result: AuditResult): Promise<void>;
-    }
-    ```
-  - **Option B:** Go interface defined in a shared module; plugins compiled as `.so` or run as gRPC subprocess.
+14.1. **Define the Plugin API interface**
+  ```typescript
+  export interface ZariaPlugin {
+    name: string;
+    version: string;
+    rules: Rule[];
+    onInit?(context: PluginContext): Promise<void>;
+    onAuditComplete?(result: AuditResult): Promise<void>;
+  }
+  ```
 
 14.2. **Implement the plugin loader**
-  - Load plugins listed in `.zariarc` via dynamic import (Option A) or plugin host (Option B).
+  - Load plugins listed in `.zariarc` via dynamic import.
   - Validate each plugin against the Plugin API interface.
   - Isolate plugin failures — a crashing plugin must not crash Zaria.
 
 14.3. **Implement plugin discovery**
-  - Scan `node_modules` for packages prefixed `zaria-plugin-` (Option A).
+  - Scan `node_modules` for packages prefixed `zaria-plugin-`.
   - Display loaded plugins in `--verbose` output.
 
 14.4. **Build the first official plugin: `zaria-plugin-nextjs`**
-  - Additional rules specific to Next.js: missing `getStaticProps`/ISR for static-eligible pages, large `_app.tsx` with no code splitting, missing Image component usage.
+  - Additional rules specific to Next.js.
 
 14.5. **Build the first official plugin: `zaria-plugin-prisma`**
-  - Rules specific to Prisma ORM: missing `select` fields (over-fetching), missing `include` guard for sensitive relations, N+1 specific to Prisma patterns.
+  - Rules specific to Prisma ORM.
 
 14.6. **Document the plugin authoring guide**
   - Create `docs/plugin-authoring.md`.
-  - Include a starter template repository link.
 
 ---
 
@@ -659,25 +498,14 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 15.1. **Achieve ≥ 80% unit test coverage** across all modules.
 
 15.2. **Write integration tests** for each audit dimension using the fixture projects.
-  - Each seeded issue in `sample-ts-app` must be caught by the corresponding rule.
-  - `clean-app` must produce zero `critical` or `high` findings.
 
 15.3. **Write E2E tests** — spawn the `zaria` binary and verify stdout, exit codes, and output files.
-  - Test full audit with terminal, JSON, Markdown, HTML, SARIF outputs.
-  - Test CI mode with `--threshold`.
 
-15.4. **Set up mutation testing** to validate test quality.
-  - **Option A:** `stryker` Mutant testing framework.
-  - **Option B:** `go-mutesting`.
+15.4. **Set up mutation testing** (`stryker`).
 
-15.5. **Set up performance benchmarks** to detect regressions in audit speed.
-  - Benchmark against a 100k-line TypeScript codebase.
-  - Target: full audit completes in < 60 seconds on developer hardware.
+15.5. **Set up performance benchmarks** against a 100k-line TypeScript codebase.
 
-15.6. **Conduct a security review**
-  - Ensure no credentials are logged.
-  - Ensure output file writes do not follow symlinks outside the project root.
-  - Ensure SRE queries are read-only and cannot be used for SSRF.
+15.6. **Conduct a security review**.
 
 ---
 
@@ -687,27 +515,15 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 ### Tasks
 
-16.1. **Write user documentation site** (using Docusaurus or VitePress)
-  - Getting Started guide.
-  - Full CLI reference (auto-generated from command definitions).
-  - Configuration reference (auto-generated from schema).
-  - Rule catalogue — one page per rule with description, example triggering code, and recommendation.
-  - SRE Integration guide.
-  - Plugin authoring guide.
+16.1. **Write user documentation site** (using VitePress).
 
-16.2. **Write `CONTRIBUTING.md`**
-  - Code of conduct.
-  - Development setup steps.
-  - How to add a new rule.
-  - Pull request process and review checklist.
+16.2. **Write `CONTRIBUTING.md`**.
 
 16.3. **Write `CHANGELOG.md`** following Keep a Changelog format.
 
 16.4. **Write `SECURITY.md`** with vulnerability reporting process.
 
-16.5. **Generate API reference documentation**
-  - **Option A:** TypeDoc.
-  - **Option B:** `godoc`.
+16.5. **Generate API reference documentation** (TypeDoc).
 
 ---
 
@@ -717,32 +533,19 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 ### Tasks
 
-17.1. **Publish to npm (Option A)**
-  - Configure `package.json` with correct `bin`, `main`, `types`, `files` fields.
-  - Set up automated publish on git tag via GitHub Actions.
-  - Publish `@zaria/plugin-api` as a separate package.
+17.1. **Publish to npm** — configure `package.json`, set up automated publish on git tag.
 
-17.2. **Compile to single binary (both options)**
-  - **Option A:** Use `pkg` or `@yao-pkg/pkg` to compile Node.js app to binary for Linux x64/arm64, macOS x64/arm64, Windows x64.
-  - **Option B:** Use `goreleaser` to cross-compile and produce binaries + checksums.
+17.2. **Compile to single binary** — use `pkg` or `@yao-pkg/pkg`.
 
-17.3. **Set up GitHub Releases**
-  - Attach binaries as release assets.
-  - Auto-generate release notes from commits since last tag.
+17.3. **Set up GitHub Releases** with binaries as release assets.
 
-17.4. **Set up Homebrew tap** (macOS/Linux)
-  - Create `zoe-life/homebrew-tap` repository.
-  - Auto-update formula on release via GitHub Actions.
+17.4. **Set up Homebrew tap** (macOS/Linux).
 
-17.5. **Set up Windows Scoop manifest** _(stretch goal)_
+17.5. **Set up Windows Scoop manifest** _(stretch goal)_.
 
-17.6. **Set up Docker image** _(for CI use cases)_
-  - `zoe-life/zaria:latest` and `zoe-life/zaria:X.Y.Z` tags.
-  - Publish to GitHub Container Registry (ghcr.io).
+17.6. **Set up Docker image** for CI use cases.
 
-17.7. **Set up release signing**
-  - Sign binaries with `cosign`.
-  - Publish SBOM (Software Bill of Materials) in SPDX format.
+17.7. **Set up release signing** with `cosign` and SBOM in SPDX format.
 
 ---
 
@@ -752,43 +555,28 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 ### Tasks
 
-18.1. **Implement audit history and trending**
-  - Store structured audit history per project.
-  - CLI command `zaria history` to view score trends over time.
-  - Export history as CSV or JSON.
+18.1. **Implement audit history and trending**.
 
-18.2. **Implement shared team configuration**
-  - Support fetching `.zariarc` from a remote URL (HTTP/S3) for organisation-wide policy.
-  - Authenticated config fetch for private URLs.
+18.2. **Implement shared team configuration**.
 
-18.3. **Implement compliance report export**
-  - Generate a PDF report suitable for security audits or compliance documentation.
-  - Include executive summary, detailed findings, remediation roadmap.
+18.3. **Implement compliance report export** (PDF).
 
-18.4. **Design the Zaria Dashboard** _(future: separate service)_
-  - Web dashboard aggregating audit results across multiple projects.
-  - Role-based access control.
-  - API key management for CI/CD integration.
-  - Webhook notifications (Slack, Teams, PagerDuty) on score threshold breach.
+18.4. **Design the Zaria Dashboard** _(future: separate service)_.
 
-18.5. **Implement custom rule registry** _(enterprise tier)_
-  - Organisation-scoped private rule packages.
-  - Rule versioning and rollout control.
+18.5. **Implement custom rule registry** _(enterprise tier)_.
 
 ---
 
-## Immediate Next Steps (Post-Confirmation)
+## Immediate Next Steps
 
-Once the tech stack is confirmed, the following should happen **in order**:
-
-1. ✅ Complete Phase 1 — Project Scaffolding (2–3 days)
-2. ✅ Complete Phase 2 — CLI Framework (1–2 days)
-3. ✅ Complete Phase 3 — Configuration System (2 days)
-4. ✅ Complete Phase 4 — Static Analysis Foundation (3–5 days)
-5. ✅ Complete Phases 5–9 in parallel workstreams (1–2 weeks)
-6. ✅ Complete Phase 10 — Scoring (1 day)
-7. ✅ Complete Phase 11 — Reporting (2–3 days)
-8. ✅ Tag and release `v0.1.0-alpha` for internal testing
+1. ✅ Complete Phase 1 — Project Scaffolding (Node.js/TypeScript)
+2. Complete Phase 2 — CLI Framework
+3. Complete Phase 3 — Configuration System
+4. Complete Phase 4 — Static Analysis Foundation
+5. Complete Phases 5–9 in parallel workstreams
+6. Complete Phase 10 — Scoring
+7. Complete Phase 11 — Reporting
+8. Tag and release `v0.1.0-alpha` for internal testing
 9. Continue with Phases 12–18 iteratively.
 
 ---
