@@ -30,8 +30,12 @@ const MODULE_LET = /^(?:export\s+)?let\s+\w+/m;
 /**
  * Exported `const` with a mutable initialiser (object or array literal).
  * e.g. `export const state = { count: 0 };`
+ *
+ * Uses `[^=\n]*` instead of a dotall lazy match so the pattern cannot cross
+ * a line boundary and accidentally trigger on a `{` that belongs to a later
+ * function body, which would produce false positives for primitive constants.
  */
-const MUTABLE_EXPORT_CONST = /^export\s+const\s+\w+\s*[=:][^=][\s\S]*?[{[]/m;
+const MUTABLE_EXPORT_CONST = /^export\s+const\s+\w+[^=\n]*=\s*[{[]/m;
 
 /** Path segments that identify config/constants files — exempt from this rule. */
 const EXEMPT_PATH_SEGMENTS = ['config', 'constant', 'defaults', 'setting', 'env'];
