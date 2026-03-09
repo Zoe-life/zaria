@@ -13,8 +13,9 @@ export default [
       parser: tsParser,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['tests/unit/*.ts', 'tests/unit/cli/*.ts', 'tests/unit/config/*.ts', 'tests/integration/*.ts'],
+          allowDefaultProject: ['tests/unit/*.ts', 'tests/unit/cli/*.ts', 'tests/unit/config/*.ts', 'tests/unit/audit/*.ts', 'tests/unit/audit/performance/*.ts', 'tests/unit/audit/architecture/*.ts', 'tests/integration/*.ts'],
           defaultProject: './tsconfig.lint.json',
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 50,
         },
         tsconfigRootDir: import.meta.dirname,
         ecmaVersion: 2022,
@@ -34,6 +35,6 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'tests/fixtures/**'],
   },
 ];
