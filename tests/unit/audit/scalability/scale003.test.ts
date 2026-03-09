@@ -72,6 +72,28 @@ describe('SCALE003 — Stateful Singleton Pattern', () => {
     expect(findings).toHaveLength(0);
   });
 
+  it('does NOT flag exported primitive const even when the file contains later braces', () => {
+    // Regression for MUTABLE_EXPORT_CONST regex false positive: the lazy [\s\S]*?
+    // could match across lines and pick up a { from a function body later in the file.
+    const content = [
+      "export const VERSION = '1.0.0';",
+      '',
+      'export function compute() {',
+      '  return { result: 42 };',
+      '}',
+    ].join('\n');
+    const findings = scale003.check(ctxWithFile('/proj/src/version.ts', content));
+    expect(findings).toHaveLength(0);
+  });
+
+  it('does NOT flag exported typed const with primitive value', () => {
+    // TypeScript type annotation: `export const NAME: string = 'value'` must not be flagged.
+    const findings = scale003.check(
+      ctxWithFile('/proj/src/types.ts', "export const APP_NAME: string = 'zaria';"),
+    );
+    expect(findings).toHaveLength(0);
+  });
+
   it('does NOT flag config files (exempt by path)', () => {
     const findings = scale003.check(
       ctxWithFile('/proj/src/config.ts', 'let env = process.env.NODE_ENV;'),
