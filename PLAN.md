@@ -13,11 +13,11 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 | 1 ✅ | Project Scaffolding & Tooling | Compilable, testable, linted skeleton |
 | 2 ✅ | CLI Framework & Command Structure | All commands parse and route correctly |
 | 3 ✅ | Configuration System | `.zariarc` / `zaria.config.ts` loading and validation |
-| 4 | Static Analysis Foundation | AST parsing and file traversal pipeline |
-| 5 | Audit Engine — Performance | Performance dimension rules and scoring |
-| 6 | Audit Engine — Architecture | Architecture dimension rules and scoring |
-| 7 | Audit Engine — Scalability & Observability | Scalability dimension rules and scoring |
-| 8 | Audit Engine — Data Integrity & Race Conditions | Integrity dimension rules and scoring |
+| 4 ✅ | Static Analysis Foundation | AST parsing and file traversal pipeline |
+| 5 ✅ | Audit Engine — Performance | Performance dimension rules and scoring |
+| 6 ✅ | Audit Engine — Architecture | Architecture dimension rules and scoring |
+| 7 ✅ | Audit Engine — Scalability & Observability | Scalability dimension rules and scoring |
+| 8 ✅ | Audit Engine — Data Integrity & Race Conditions | Integrity dimension rules and scoring |
 | 9 | Audit Engine — Long-Term Maintenance | Maintenance dimension rules and scoring |
 | 10 | Scoring & Aggregation | Weighted overall score, dimension scores |
 | 11 | Report Output System | Terminal, JSON, HTML, Markdown, SARIF |
@@ -289,55 +289,110 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 ---
 
-## Phase 7 — Audit Engine — Scalability & Observability
+## Phase 7 — Audit Engine — Scalability & Observability ✅
 
 **Goal:** Scalability dimension rules and scoring.
 
 ### Tasks
 
-7.1. **Implement SCALE001 — Missing Structured Logging**
-  - Detect `console.log` usage outside of the logger module.
+7.1. **Implement SCALE001 — Missing Structured Logging** ✅
+  - Detect `console.log` usage outside of the logger module and CLI command files.
+  - `src/audit/scalability/rules/scale001.ts`
 
-7.2. **Implement SCALE002 — Unbounded Query**
-  - Detect ORM queries without `.limit()` or `.take()`.
+7.2. **Implement SCALE002 — Unbounded Query** ✅
+  - Detect ORM queries (`findAll`, `findMany`, `getMany`, etc.) without `.limit()` or `.take()`.
+  - `src/audit/scalability/rules/scale002.ts`
 
-7.3. **Implement SCALE003 — Stateful Singleton Pattern**
-  - Detect module-level mutable state that prevents horizontal scaling.
+7.3. **Implement SCALE003 — Stateful Singleton Pattern** ✅
+  - Detect module-level mutable `let` variables and exported mutable objects.
+  - `src/audit/scalability/rules/scale003.ts`
 
-7.4. **Implement SCALE004 — Missing Health Check Endpoint**
-  - Detect Express/Fastify/Hapi apps without a `/health` or `/healthz` route.
+7.4. **Implement SCALE004 — Missing Health Check Endpoint** ✅
+  - Detect Express/Fastify/Koa app files that register routes but lack `/health`, `/healthz`, `/ping`, or `/status`.
+  - `src/audit/scalability/rules/scale004.ts`
 
-7.5. **Implement dimension scorer for Scalability**
+7.5. **Implement dimension scorer for Scalability** ✅
+  - `src/audit/scalability/scorer.ts` — `scoreScalability()` + `SCALABILITY_RULES`.
+  - `src/audit/scalability/index.ts` — barrel exports.
 
-7.6. **Write unit tests for each Scalability rule**
+7.6. **Write unit tests for each Scalability rule** ✅
+  - `tests/unit/audit/scalability/scale001.test.ts` — 6 tests.
+  - `tests/unit/audit/scalability/scale002.test.ts` — 8 tests.
+  - `tests/unit/audit/scalability/scale003.test.ts` — 6 tests.
+  - `tests/unit/audit/scalability/scale004.test.ts` — 7 tests.
+  - `tests/unit/audit/scalability/scorer.test.ts` — 7 tests.
 
-7.7. **Verify Phase 7**
+7.7. **Verify Phase 7** ✅
+  - All 34 scalability tests pass.
+  - `clean-app` produces zero Scalability findings.
+  - `sample-ts-app` scalability fixture triggers SCALE001, SCALE002, and SCALE003.
 
 ---
 
-## Phase 8 — Audit Engine — Data Integrity & Race Conditions
+## Phase 7a — Structured Logger Migration ✅
+
+**Goal:** Replace all `console.log`/`console.error` calls in application source with a structured pino logger.
+
+### Tasks
+
+7a.1. **Install pino and pino-pretty** ✅
+  - `pino@10.3.1` (runtime dependency), `pino-pretty@13.1.3` (runtime dependency for TTY output).
+  - Zero known CVEs.
+
+7a.2. **Create `src/logger.ts`** ✅
+  - Singleton pino instance; `pino-pretty` transport when stdout is a TTY, JSON output otherwise.
+  - Log level controlled via `ZARIA_LOG_LEVEL` env var (default: `info`).
+
+7a.3. **Migrate CLI commands** ✅
+  - `src/cli/commands/audit.ts` — all `console.log` → `logger.info`.
+  - `src/cli/commands/config.ts` — all `console.log` → `logger.info`, `console.error` → `logger.error`/`logger.warn`.
+  - `src/cli/commands/sre.ts` — `console.log` → `logger.info`.
+  - `src/cli/commands/report.ts` — `console.log` → `logger.info`.
+  - `src/cli/commands/plugin.ts` — `console.log` → `logger.info`.
+
+7a.4. **Update tests** ✅
+  - `tests/unit/cli/index.test.ts` — spy on `logger.info`/`logger.warn` instead of `console.log`.
+  - `tests/unit/index.test.ts` — spy on `logger.info`.
+
+---
+
+## Phase 8 — Audit Engine — Data Integrity & Race Conditions ✅
 
 **Goal:** Data integrity dimension rules and scoring.
 
 ### Tasks
 
-8.1. **Implement INT001 — Missing Input Validation**
-  - Detect route handlers that read `req.body` or `req.query` without validation middleware.
+8.1. **Implement INT001 — Missing Input Validation** ✅
+  - Detect route handler files that read `req.body`/`req.query`/`req.params` without a schema validation library.
+  - `src/audit/integrity/rules/int001.ts`
 
-8.2. **Implement INT002 — Missing Transaction Boundary**
-  - Detect multi-step ORM write operations outside a transaction.
+8.2. **Implement INT002 — Missing Transaction Boundary** ✅
+  - Detect functions that perform ≥ 2 ORM write operations without a transaction.
+  - `src/audit/integrity/rules/int002.ts`
 
-8.3. **Implement INT003 — TOCTOU Vulnerability Pattern**
-  - Detect check-then-act patterns on file system or database without atomic operations.
+8.3. **Implement INT003 — TOCTOU Vulnerability Pattern** ✅
+  - Detect check-then-act patterns (existsSync→writeFile, findOne→create) without atomic guards.
+  - `src/audit/integrity/rules/int003.ts`
 
-8.4. **Implement INT004 — Non-Idempotent Write Endpoint**
-  - Detect POST handlers that do not check for existing resources before creating.
+8.4. **Implement INT004 — Non-Idempotent Write Endpoint** ✅
+  - Detect POST handlers that create resources without prior existence checks.
+  - `src/audit/integrity/rules/int004.ts`
 
-8.5. **Implement dimension scorer for Data Integrity**
+8.5. **Implement dimension scorer for Data Integrity** ✅
+  - `src/audit/integrity/scorer.ts` — `scoreIntegrity()` + `INTEGRITY_RULES`.
+  - `src/audit/integrity/index.ts` — barrel exports.
 
-8.6. **Write unit tests for each Data Integrity rule**
+8.6. **Write unit tests for each Data Integrity rule** ✅
+  - `tests/unit/audit/integrity/int001.test.ts` — 8 tests.
+  - `tests/unit/audit/integrity/int002.test.ts` — 7 tests.
+  - `tests/unit/audit/integrity/int003.test.ts` — 8 tests.
+  - `tests/unit/audit/integrity/int004.test.ts` — 8 tests.
+  - `tests/unit/audit/integrity/scorer.test.ts` — 7 tests.
 
-8.7. **Verify Phase 8**
+8.7. **Verify Phase 8** ✅
+  - All 38 integrity tests pass.
+  - `clean-app` produces zero Integrity findings.
+  - `sample-ts-app` integrity fixture triggers INT001, INT002, INT003, and INT004.
 
 ---
 

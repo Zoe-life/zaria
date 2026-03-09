@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { buildProgram } from '../../../src/cli/index.ts';
+import { logger } from '../../../src/logger.ts';
 
 function parse(args: string[]): void {
   buildProgram().parse(['node', 'zaria', ...args]);
@@ -13,11 +14,13 @@ async function parseAsync(args: string[]): Promise<void> {
 }
 
 describe('CLI program', () => {
-  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+  let loggerInfoSpy: ReturnType<typeof vi.spyOn>;
+  let loggerWarnSpy: ReturnType<typeof vi.spyOn>;
   let processExitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger);
+    loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger);
     // Commander calls process.exit(0) for --version and --help; prevent actual exit.
     processExitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
       throw new Error('process.exit called');
@@ -25,7 +28,8 @@ describe('CLI program', () => {
   });
 
   afterEach(() => {
-    consoleLogSpy.mockRestore();
+    loggerInfoSpy.mockRestore();
+    loggerWarnSpy.mockRestore();
     processExitSpy.mockRestore();
   });
 
@@ -48,55 +52,55 @@ describe('CLI program', () => {
   // audit command
   it('audit: default path is cwd', () => {
     parse(['audit']);
-    expect(consoleLogSpy).toHaveBeenCalledWith(
+    expect(loggerInfoSpy).toHaveBeenCalledWith(
       expect.stringMatching(/^Running full audit on .+…$/),
     );
   });
 
   it('audit: explicit path', () => {
     parse(['audit', '/tmp/project']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Running full audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Running full audit on /tmp/project…');
   });
 
   // audit sub-commands
   it('audit:perf: explicit path', () => {
     parse(['audit:perf', '/tmp/project']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Running performance audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Running performance audit on /tmp/project…');
   });
 
   it('audit:arch: explicit path', () => {
     parse(['audit:arch', '/tmp/project']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Running architecture audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Running architecture audit on /tmp/project…');
   });
 
   it('audit:scale: explicit path', () => {
     parse(['audit:scale', '/tmp/project']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Running scalability audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Running scalability audit on /tmp/project…');
   });
 
   it('audit:integrity: explicit path', () => {
     parse(['audit:integrity', '/tmp/project']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Running integrity audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Running integrity audit on /tmp/project…');
   });
 
   it('audit:maint: explicit path', () => {
     parse(['audit:maint', '/tmp/project']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Running maintenance audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Running maintenance audit on /tmp/project…');
   });
 
   // report command
   it('report: prints stub message', () => {
     parse(['report']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Generating report from last audit run…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Generating report from last audit run…');
   });
 
   // config commands
-  it('config init: creates .zariarc.yml and prints success', async () => {
+  it('config init: creates .zariarc.yml and logs success', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'zaria-cli-test-'));
     try {
       await parseAsync(['config', 'init', '--dir', dir]);
-      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('✅'));
-      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('.zariarc.yml'));
+      expect(loggerInfoSpy).toHaveBeenCalledWith(expect.stringContaining('✅'));
+      expect(loggerInfoSpy).toHaveBeenCalledWith(expect.stringContaining('.zariarc.yml'));
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
@@ -110,7 +114,7 @@ describe('CLI program', () => {
       process.chdir(dir);
       try {
         await parseAsync(['config', 'validate']);
-        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('No config file found'));
+        expect(loggerWarnSpy).toHaveBeenCalledWith(expect.stringContaining('No config file found'));
       } finally {
         process.chdir(originalCwd);
       }
@@ -122,28 +126,28 @@ describe('CLI program', () => {
   // sre commands
   it('sre connect: prints stub message', () => {
     parse(['sre', 'connect']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('SRE connection wizard — coming soon.');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('SRE connection wizard — coming soon.');
   });
 
   it('sre test: prints stub message', () => {
     parse(['sre', 'test']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('No SRE providers configured.');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('No SRE providers configured.');
   });
 
   // plugin commands
   it('plugin list: prints stub message', () => {
     parse(['plugin', 'list']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('No plugins installed.');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('No plugins installed.');
   });
 
   it('plugin add: prints stub message with name', () => {
     parse(['plugin', 'add', 'zaria-plugin-nextjs']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Installing plugin zaria-plugin-nextjs…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Installing plugin zaria-plugin-nextjs…');
   });
 
   it('plugin remove: prints stub message with name', () => {
     parse(['plugin', 'remove', 'zaria-plugin-nextjs']);
-    expect(consoleLogSpy).toHaveBeenCalledWith('Removing plugin zaria-plugin-nextjs…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Removing plugin zaria-plugin-nextjs…');
   });
 
   // unknown command

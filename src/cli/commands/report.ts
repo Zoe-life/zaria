@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { logger } from '../../logger.js';
 
 /** `zaria report` — re-renders the most recent saved audit result. */
 export const reportCommand = new Command('report')
@@ -6,5 +7,5 @@ export const reportCommand = new Command('report')
   .option('-o, --output <format>', 'output format: terminal|json|html|markdown|sarif', 'terminal')
   .option('-f, --file <path>', 'write report to file instead of stdout')
   .action(() => {
-    console.log('Generating report from last audit run…');
+    logger.info('Generating report from last audit run…');
   });

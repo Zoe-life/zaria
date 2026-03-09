@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VERSION, run } from '../../src/index.ts';
+import { logger } from '../../src/logger.ts';
 
 describe('Zaria entry point', () => {
-  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
+  let loggerInfoSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger);
   });
 
   afterEach(() => {
-    consoleLogSpy.mockRestore();
+    loggerInfoSpy.mockRestore();
   });
 
   it('should export the correct version string', () => {
@@ -19,6 +20,6 @@ describe('Zaria entry point', () => {
 
   it('should invoke the audit command without throwing', () => {
     expect(() => run(['node', 'zaria', 'audit', '/tmp'])).not.toThrow();
-    expect(consoleLogSpy).toHaveBeenCalledWith('Running full audit on /tmp…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Running full audit on /tmp…');
   });
 });
