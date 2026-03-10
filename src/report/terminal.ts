@@ -14,7 +14,7 @@
  * Space O(F)  — the output is built line-by-line in a string array.
  */
 
-import chalk from 'chalk';
+import chalk, { type ChalkInstance } from 'chalk';
 import type { AuditResult, Finding, Grade } from '../audit/types.js';
 
 // ---------------------------------------------------------------------------
@@ -22,7 +22,7 @@ import type { AuditResult, Finding, Grade } from '../audit/types.js';
 // ---------------------------------------------------------------------------
 
 /** Map severity → chalk colour function. */
-const SEVERITY_COLOR: Readonly<Record<string, chalk.Chalk>> = {
+const SEVERITY_COLOR: Readonly<Record<string, ChalkInstance>> = {
   critical: chalk.red,
   high: chalk.yellow,
   medium: chalk.cyan,
@@ -30,7 +30,7 @@ const SEVERITY_COLOR: Readonly<Record<string, chalk.Chalk>> = {
 };
 
 /** Map grade → chalk colour function. */
-const GRADE_COLOR: Readonly<Record<Grade, chalk.Chalk>> = {
+const GRADE_COLOR: Readonly<Record<Grade, ChalkInstance>> = {
   A: chalk.green,
   B: chalk.green,
   C: chalk.yellow,
