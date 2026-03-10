@@ -27,7 +27,7 @@ We will respond within one business day.
 
 ## What Remains Free Under AGPL
 
-All features listed in the **AGPL Community Edition** section of [docs/open-source-strategy.md](./docs/open-source-strategy.md) are permanently free for AGPL-compliant use. These features will never be moved behind a commercial licence.
+All features listed in the **AGPL Community Edition** section of [docs/open-source-strategy.md](./docs/open-source-strategy.md) are permanently free for AGPL-compliant use. These features will never be moved behind a commercial licence. Some infrastructure modules (parser, traversal, CLI skeleton, config system, basic reporters) may be selectively relicensed to MIT in the future — see the Selective MIT Candidate Analysis in the strategy document for details.
 
 ---
 

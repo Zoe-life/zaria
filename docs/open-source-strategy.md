@@ -1,6 +1,6 @@
 # Licensing & Commercialisation Strategy — Zaria
 
-> **Status (March 2026):** AGPL-3.0-or-later has been applied. This document records the rationale for that decision and defines the three-phase licensing roadmap: **AGPL → Enterprise → MIT**.
+> **Status (March 2026):** AGPL-3.0-or-later has been applied. This document records the rationale for that decision, defines the two-tier model (AGPL community + Enterprise commercial), and analyses which specific features are candidates for eventual MIT relicensing — and which are not.
 
 ---
 
@@ -8,15 +8,15 @@
 
 Zaria was written by a single author and had no licence applied before this decision. That starting position made it legally clean to choose any licence — including strong copyleft — without needing consent from any other contributor or risking community backlash from a retroactive change.
 
-AGPL-3.0 was chosen as the Phase 1 licence for three reasons:
+AGPL-3.0 was chosen as the opening licence for three reasons:
 
 1. **Network-copyleft closes the SaaS loophole.** Any company that runs a modified version of Zaria as a networked service must publish their modifications under AGPL. GPL-3.0 would not cover this case; AGPL does. This is the primary commercial protection at this stage.
 2. **Full source visibility builds trust.** Developers can read, audit, fork, and self-host Zaria freely. This drives adoption — the community that forms under AGPL becomes the funnel for enterprise sales.
-3. **AGPL is the easiest licence to move *from*.** Moving from restrictive (AGPL) to permissive (MIT) is uncontroversial; the reverse is impossible without unanimous contributor consent. Applying AGPL now and relaxing later is the correct direction of travel.
+3. **AGPL is the easiest licence to move *from*, selectively.** Moving specific modules from AGPL to MIT is uncontroversial and entirely at the author's discretion as sole copyright holder. Moving in the reverse direction is impossible without unanimous contributor consent. Starting under AGPL keeps all future options open.
 
 ---
 
-## Three-Phase Roadmap
+## Licensing Roadmap
 
 ### Phase 1 — AGPL (Now)
 
@@ -30,64 +30,121 @@ A separate **Enterprise Edition** will be released under a commercial licence. I
 
 Enterprises that cannot or will not comply with AGPL (e.g., because they do not wish to open-source their internal Zaria modifications) purchase an Enterprise licence instead. This is a standard **dual-licensing / open-core** model.
 
-### Phase 3 — MIT (future)
+### Phase 3 — Selective MIT Relicensing (future, by module)
 
-Once the Enterprise tier has generated sustainable revenue, the community edition will be relicensed from AGPL to **MIT**. This is the long-term commitment to the open-source community: the core audit engine will eventually be fully permissively licensed.
+Once the Enterprise tier has generated sustainable revenue, **specific modules** of the community edition may be selectively relicensed from AGPL to MIT. This is **not** a wholesale relicensing of the entire product — it is a deliberate, module-by-module decision based on the strategic analysis in the next section.
 
-The MIT relicensing timeline is intentionally left open — it is tied to business sustainability, not a fixed date. Enterprise features will remain proprietary after the community edition moves to MIT.
+The deciding question for each module: *Does releasing this under MIT let a commercial competitor embed it in a proprietary product and capture the value without giving anything back — or does it primarily grow the ecosystem without transferring competitive advantage?*
+
+Enterprise features remain proprietary regardless of what happens to the community edition.
 
 ---
 
 ## Feature Tier Matrix
 
-This table is the canonical definition of what belongs in each tier. It is the contract with the community: features in the AGPL tier will **never be moved to a paid tier**.
+This table is the canonical definition of what belongs in each tier. Features in the AGPL tier will **never be moved to a paid tier**.
 
-### AGPL Community Edition
+### AGPL Community Edition (Current)
 
-| Feature | Status | Notes |
-|---|---|---|
-| **Core audit engine (all 6 dimensions)** | ✅ Included | PERF, ARCH, SCALE, INT, MAINT, EFF — all 24 rules |
-| **Performance audit** (PERF001–PERF004) | ✅ Included | N+1 queries, sync blocking, memory leaks, bundle size |
-| **Architecture audit** (ARCH001–ARCH004) | ✅ Included | Circular deps, coupling, clean arch evaluation |
-| **Scalability & Observability audit** (SCALE001–SCALE004) | ✅ Included | Stateful patterns, tracing, health checks, unbounded queries |
-| **Data Integrity & Race Conditions audit** (INT001–INT004) | ✅ Included | Shared-state mutations, transactions, TOCTOU, idempotency |
-| **Long-Term Maintenance audit** (MAINT001–MAINT005) | ✅ Included | Complexity, duplication, CVEs, deprecated deps, docs coverage |
-| **Code Efficiency audit** (EFF001–EFF003) | ✅ Included | Efficiency-focused static rules |
-| **Terminal report** | ✅ Included | ANSI-coloured, progress bars, A–F grade |
-| **JSON report** | ✅ Included | Machine-readable structured output |
-| **Markdown report** | ✅ Included | GitHub / GitLab PR comment format |
-| **HTML report** | ✅ Included | Self-contained, offline-capable |
-| **SARIF report** | ✅ Included | GitHub Code Scanning, Azure DevOps, VS Code |
-| **Single-project audit** | ✅ Included | Audit one repository per invocation |
-| **Zero-config usage** | ✅ Included | Works out of the box with sensible defaults |
-| **YAML / JSON config** (`.zariarc`) | ✅ Included | Per-project thresholds, ignore rules, dimension control |
-| **CI/CD exit codes & quality gates** | ✅ Included | `--threshold` flag; non-zero exit on breach |
-| **SRE integrations** (Prometheus, Datadog, Grafana) | ✅ Included | Read-only, opt-in, configures via `sre connect` |
-| **Community plugin system** | ✅ Included | `plugin add / remove / list`; typed plugin interface |
-| **`--only` / `--skip` dimension flags** | ✅ Included | Selective audit runs |
+| Feature | Notes |
+|---|---|
+| **Core audit engine (all 6 dimensions)** | PERF, ARCH, SCALE, INT, MAINT, EFF — all 24 rules |
+| **Performance audit** (PERF001–PERF004) | N+1 queries, sync blocking, memory leaks, bundle size |
+| **Architecture audit** (ARCH001–ARCH004) | Circular deps, coupling, clean arch evaluation |
+| **Scalability & Observability audit** (SCALE001–SCALE004) | Stateful patterns, tracing, health checks, unbounded queries |
+| **Data Integrity & Race Conditions audit** (INT001–INT004) | Shared-state mutations, transactions, TOCTOU, idempotency |
+| **Long-Term Maintenance audit** (MAINT001–MAINT005) | Complexity, duplication, CVEs, deprecated deps, docs coverage |
+| **Code Efficiency audit** (EFF001–EFF003) | Efficiency-focused static rules |
+| **Terminal report** | ANSI-coloured, progress bars, A–F grade |
+| **JSON report** | Machine-readable structured output |
+| **Markdown report** | GitHub / GitLab PR comment format |
+| **HTML report** | Self-contained, offline-capable |
+| **SARIF report** | GitHub Code Scanning, Azure DevOps, VS Code |
+| **Single-project audit** | Audit one repository per invocation |
+| **Zero-config usage** | Works out of the box with sensible defaults |
+| **YAML / JSON config** (`.zariarc`) | Per-project thresholds, ignore rules, dimension control |
+| **CI/CD exit codes & quality gates** | `--threshold` flag; non-zero exit on breach |
+| **SRE integrations** (Prometheus, Datadog, Grafana) | Read-only, opt-in, configures via `sre connect` |
+| **Community plugin system** | `plugin add / remove / list`; typed plugin interface |
+| **`--only` / `--skip` dimension flags** | Selective audit runs |
 
-### Enterprise Edition (Commercial Licence)
+### Enterprise Edition (Commercial Licence — Permanent)
 
 | Feature | Notes |
 |---|---|
 | **Multi-repo / monorepo fleet auditing** | Audit dozens of repos in one run; aggregate scoring and trend comparison across the fleet |
-| **Centralized audit history & trend dashboard** | Persistent storage of audit runs; visualise score trends over time; regression alerts |
+| **Centralised audit history & trend dashboard** | Persistent storage of audit runs; visualise score trends over time; regression alerts |
 | **Policy-as-code enforcement** | Organisation-wide quality gates defined in a central policy repo; enforced across all teams' CI pipelines |
 | **SAML / SSO / LDAP authentication** | Required for enterprise procurement; integrates with Okta, Azure AD, Google Workspace |
 | **Role-based access control (RBAC)** | Team leads see all repos; developers see their own; compliance officers get read-only dashboard access |
 | **Custom rule authoring UI** | Browser-based wizard for writing and testing organisation-specific audit rules without touching code |
 | **Audit data export** (CSV, REST API) | Pipe findings into JIRA, ServiceNow, Splunk, or any internal compliance system |
 | **PDF compliance reports** | Formal, printable reports for auditors, board packs, and compliance submissions |
-| **Advanced SRE correlation engine** | Maps static findings to runtime error rates, MTTR, and incident frequency from Prometheus / Datadog / Grafana; surfaces "high-code-risk + high-production-impact" critical findings |
+| **Advanced SRE correlation engine** | Maps static findings to runtime error rates, MTTR, and incident frequency; surfaces "high-code-risk + high-production-impact" critical findings |
 | **On-premises agent** | Run Zaria behind a firewall with no outbound internet access; results pushed to self-hosted or Zaria-hosted dashboard |
 | **Priority support SLA** | Guaranteed response times; private Slack channel; dedicated engineering contact |
 | **Zaria Cloud** (hosted SaaS) | Connect repositories via GitHub / GitLab / Bitbucket app; scheduled audits; team dashboards; no CLI required |
 
-### MIT Community Edition (Phase 3 — Future)
+---
 
-When the community edition is relicensed to MIT, the AGPL feature set above transfers verbatim to MIT. No features will be removed or moved to enterprise at the point of the MIT relicensing.
+## Selective MIT Candidate Analysis
 
-Enterprise features remain proprietary after the relicensing event.
+Not all AGPL features are equal candidates for eventual MIT relicensing. The test for each feature is: **does releasing it under MIT primarily grow the ecosystem, or does it primarily hand competitive advantage to commercial actors who would not give improvements back?**
+
+Features are classified below into three categories:
+
+### ✅ MIT Candidates — Infrastructure / Plumbing Layer
+
+These modules have low standalone commercial value. They are the plumbing that makes the audit engine run, not the intelligence inside it. Releasing them under MIT helps IDE extension authors, CI system integrators, and framework maintainers build on Zaria's foundations without being forced to open-source their own tools — and without giving away anything an embeder could exploit commercially on its own.
+
+| Module / Feature | Location | Rationale for MIT candidacy |
+|---|---|---|
+| **AST parser** | `src/audit/parser.ts` | Infrastructure: wraps ts-morph; no audit logic; useless without rules |
+| **File traversal engine** | `src/audit/traversal.ts` | Infrastructure: discovers files; no detection value alone |
+| **Analysis context builder** | `src/audit/context.ts` | Infrastructure: assembles shared state; no findings produced |
+| **Type definitions & interfaces** | `src/audit/types.ts` | Interface contracts; no logic; needed to build compatible plugins |
+| **CLI skeleton** (command routing, argument parsing) | `src/cli/index.ts`, `src/cli/commands/*.ts` | Scaffolding; the value is in what the commands invoke, not the routing |
+| **Configuration schema & loader** | `src/config/` | Standardised config format; helpful for plugin/tooling authors |
+| **Scoring aggregation maths** | `src/scorer/aggregate.ts` | The weighted A–F calculation is a simple algorithm, not a competitive asset |
+| **Terminal reporter** | `src/report/terminal.ts` | Text-to-console formatting; no competitive value without the rules driving it |
+| **JSON reporter** | `src/report/json.ts` | Serialises findings to JSON; trivial without the detection logic |
+
+**Condition:** These are MIT candidates only as a group — the plumbing is not useful without the rules, so releasing it under MIT does not transfer audit capability to a competitor. They would be relicensed together once the Enterprise tier is established and there is no risk of the infrastructure alone becoming the basis of a commercial fork.
+
+### ❌ Stays AGPL — Audit Intelligence Layer
+
+These are the modules that **are** Zaria. They represent the accumulated detection logic: the patterns, heuristics, and AST traversal strategies that identify real problems in real codebases. This is the intellectual core of the product.
+
+Releasing these under MIT would allow any company — including cloud vendors and competitors — to embed, improve, and ship this detection logic in proprietary products without contributing improvements back. AGPL ensures that if someone makes a detection rule better and deploys it as a service, that improvement returns to the community. That protection is the primary reason AGPL was chosen, and it applies most forcefully here.
+
+| Module / Feature | Location | Rationale for staying AGPL |
+|---|---|---|
+| **Performance rules** (PERF001–PERF004) | `src/audit/performance/rules/` | Core detection intelligence; high reuse value for commercial actors |
+| **Architecture rules** (ARCH001–ARCH004) | `src/audit/architecture/rules/` | Core detection intelligence |
+| **Scalability rules** (SCALE001–SCALE004) | `src/audit/scalability/rules/` | Core detection intelligence |
+| **Integrity rules** (INT001–INT004) | `src/audit/integrity/rules/` | Core detection intelligence; security-adjacent value |
+| **Maintenance rules** (MAINT001–MAINT005) | `src/audit/maintenance/rules/` | Core detection intelligence |
+| **Efficiency rules** (EFF001–EFF003) | `src/audit/efficiency/rules/` | Core detection intelligence |
+| **Dimension scorers** | `src/audit/*/scorer.ts` | Aggregation logic specific to each dimension's weighting strategy |
+| **SRE integrations** (Prometheus, Datadog, Grafana) | `src/sre/` | Runtime-data enrichment is a key product differentiator; adapters encode proprietary API knowledge |
+| **HTML reporter** | `src/report/html.ts` | Polished stakeholder output; part of Zaria's product presentation, not generic infrastructure |
+| **Markdown reporter** | `src/report/markdown.ts` | CI/CD PR integration; a product feature, not a utility |
+| **SARIF reporter** | `src/report/sarif.ts` | Enterprise CI/CD toolchain integration; valuable enough to protect |
+| **Community plugin system** | `src/cli/commands/plugin.ts` | Plugin loader architecture; keeping it AGPL ensures plugin improvements flow back |
+
+### 🔒 Enterprise — Permanent Commercial Tier
+
+All features in the Enterprise Edition remain under a commercial licence permanently, regardless of any future changes to the community edition's licence. These features will never move to AGPL or MIT.
+
+---
+
+## Summary: What Would and Would Not Move to MIT
+
+| Category | MIT future? | Features |
+|---|---|---|
+| **Infrastructure / plumbing** | ✅ Yes (as a group, when conditions are met) | Parser, traversal, context builder, types, CLI skeleton, config, scorer maths, terminal/JSON reporters |
+| **Audit intelligence** | ❌ No — stays AGPL | All 24 detection rules, dimension scorers, SRE adapters, HTML/Markdown/SARIF reporters, plugin system |
+| **Enterprise tier** | ❌ No — stays commercial | Fleet auditing, SSO, RBAC, dashboards, policy-as-code, PDF reports, REST API, on-prem agent, Zaria Cloud |
 
 ---
 
@@ -124,7 +181,7 @@ You **must** purchase a commercial licence if:
 ## Community Commitments
 
 1. **The AGPL feature set is frozen against paywall regressions.** Features listed in the "AGPL Community Edition" table above will never be moved behind the enterprise tier. This is a permanent, public commitment.
-2. **The MIT transition is a one-way door.** Once the community edition moves to MIT, it will not revert to a more restrictive licence.
+2. **Selective MIT relicensing is additive, not reductive.** If a module is moved from AGPL to MIT, no functionality is removed — the change only relaxes the licence on that module. Nothing already open will be closed.
 3. **The enterprise/community boundary is documented here.** Any change to this table will be announced publicly with at least 90 days' notice.
 4. **Enterprise features are genuinely enterprise.** SSO, RBAC, fleet management, and SLAs are things individual developers do not need. Core audit capability stays in the open.
 
@@ -146,4 +203,4 @@ Grafana is the closest structural parallel: AGPL community edition, proprietary 
 
 ---
 
-_Last updated: March 2026. AGPL-3.0-or-later applied. Enterprise tier and Zaria Cloud in planning._
+_Last updated: March 2026. AGPL-3.0-or-later applied. Selective MIT candidate analysis added. Enterprise tier and Zaria Cloud in planning._
