@@ -20,6 +20,6 @@ describe('Zaria entry point', () => {
 
   it('should invoke the audit command without throwing', () => {
     expect(() => run(['node', 'zaria', 'audit', '/tmp'])).not.toThrow();
-    expect(loggerInfoSpy).toHaveBeenCalledWith('Running full audit on /tmp…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Analysing /tmp…');
   });
 });

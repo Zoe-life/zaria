@@ -110,3 +110,32 @@ export interface DimensionResult {
   /** All findings produced by rules in this dimension. */
   findings: Finding[];
 }
+
+// ---------------------------------------------------------------------------
+// Phase 10 — Scoring & Aggregation
+// ---------------------------------------------------------------------------
+
+/** Letter grade derived from the weighted overall score. */
+export type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
+
+/** Weighted overall score produced by the aggregation scorer. */
+export interface OverallScore {
+  /** Weighted aggregate score, clamped to [0, 100]. */
+  weighted: number;
+  /** Letter grade: A (≥90), B (≥80), C (≥70), D (≥60), F (<60). */
+  grade: Grade;
+  /** Per-dimension breakdown used to compute the weighted score. */
+  breakdown: ReadonlyArray<{ dimension: string; score: number; weight: number }>;
+}
+
+/** Complete result of a full Zaria audit run. */
+export interface AuditResult {
+  /** Absolute path to the analysed project root. */
+  projectRoot: string;
+  /** ISO 8601 timestamp of when the audit was started. */
+  timestamp: string;
+  /** Results per dimension (always five when a full audit is run). */
+  dimensions: DimensionResult[];
+  /** Weighted overall score and grade. */
+  overall: OverallScore;
+}
