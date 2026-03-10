@@ -1,20 +1,21 @@
 /**
  * Scoring & Aggregation — Phase 10.
  *
- * Accepts up to five `DimensionResult` objects, applies configured weights,
+ * Accepts up to six `DimensionResult` objects, applies configured weights,
  * and produces a single weighted overall score (0–100) with a letter grade.
  *
  * Weights (must sum to 1.0):
- *   Performance  25 %  — runtime speed and resource usage
- *   Architecture 25 %  — structural quality and modularity
- *   Scalability  20 %  — observability and horizontal growth readiness
- *   Integrity    20 %  — data safety and race-condition prevention
+ *   Performance  22 %  — runtime speed and resource usage
+ *   Architecture 22 %  — structural quality and modularity
+ *   Scalability  18 %  — observability and horizontal growth readiness
+ *   Integrity    18 %  — data safety and race-condition prevention
  *   Maintenance  10 %  — long-term sustainability and technical debt
+ *   Efficiency   10 %  — algorithmic complexity and data-structure selection
  *
  * Grade thresholds:
  *   A  90–100   B  80–89   C  70–79   D  60–69   F  0–59
  *
- * Time  O(n)  where n = number of dimension results (at most 5).
+ * Time  O(n)  where n = number of dimension results (at most 6).
  * Space O(n)  for the breakdown array.
  */
 
@@ -26,11 +27,12 @@ import type { DimensionResult, Grade, OverallScore } from '../audit/types.js';
 
 /** Ordered list of (dimension name → weight) pairs. Weights sum to 1. */
 const DIMENSION_WEIGHTS: ReadonlyMap<string, number> = new Map([
-  ['performance', 0.25],
-  ['architecture', 0.25],
-  ['scalability', 0.2],
-  ['integrity', 0.2],
+  ['performance', 0.22],
+  ['architecture', 0.22],
+  ['scalability', 0.18],
+  ['integrity', 0.18],
   ['maintenance', 0.1],
+  ['efficiency', 0.1],
 ]);
 
 /** Grade boundaries (descending). */
