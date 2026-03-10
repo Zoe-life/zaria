@@ -10,10 +10,13 @@ import { scoreArchitecture } from '../../audit/architecture/scorer.js';
 import { scoreScalability } from '../../audit/scalability/scorer.js';
 import { scoreIntegrity } from '../../audit/integrity/scorer.js';
 import { scoreMaintenance } from '../../audit/maintenance/scorer.js';
+import { scoreEfficiency } from '../../audit/efficiency/scorer.js';
 import { aggregateScores } from '../../scorer/aggregate.js';
 import { generateReport } from '../../report/index.js';
 import type { OutputFormat } from '../../report/index.js';
 import type { DimensionResult, AuditResult } from '../../audit/types.js';
+import { loadPlugins } from '../../plugin/loader.js';
+import { discoverPlugins } from '../../plugin/discovery.js';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -30,10 +33,15 @@ function addAuditFlags(cmd: Command): Command {
       parseFloat,
     )
     .option(
+      '--dim-threshold <thresholds>',
+      'per-dimension thresholds as comma-separated dim=score pairs (e.g. performance=80,integrity=90)',
+    )
+    .option(
       '--only <dimensions>',
       'comma-separated dimension names to run (e.g. performance,architecture)',
     )
     .option('--skip <rules>', 'comma-separated rule IDs to skip (e.g. MAINT001,ARCH002)')
+    .option('--plugins <paths>', 'comma-separated plugin package names or file paths to load')
     .option('-v, --verbose', 'include full finding list in terminal output');
 }
 
@@ -85,12 +93,20 @@ interface AuditFlags {
   output?: string;
   file?: string;
   threshold?: number;
+  dimThreshold?: string;
   only?: string;
   skip?: string;
+  plugins?: string;
   verbose?: boolean;
 }
 
-type DimensionName = 'performance' | 'architecture' | 'scalability' | 'integrity' | 'maintenance';
+type DimensionName =
+  | 'performance'
+  | 'architecture'
+  | 'scalability'
+  | 'integrity'
+  | 'maintenance'
+  | 'efficiency';
 
 const ALL_DIMENSIONS: ReadonlyArray<{
   name: DimensionName;
@@ -104,7 +120,36 @@ const ALL_DIMENSIONS: ReadonlyArray<{
   { name: 'scalability', scorer: scoreScalability },
   { name: 'integrity', scorer: scoreIntegrity },
   { name: 'maintenance', scorer: scoreMaintenance },
+  { name: 'efficiency', scorer: scoreEfficiency },
 ];
+
+/**
+ * Score deductions per severity level — shared by built-in scorers and the
+ * plugin dimension scorer to guarantee consistent severity weights.
+ */
+const SEVERITY_DEDUCTIONS: Readonly<Record<string, number>> = {
+  critical: 20,
+  high: 10,
+  medium: 5,
+  low: 2,
+};
+
+/**
+ * Parse a comma-separated `dim=score` string into a Map<dimensionName, threshold>.
+ * Example: "performance=80,integrity=90" → Map { performance → 80, integrity → 90 }
+ */
+function parseDimThresholds(raw: string | undefined): Map<string, number> {
+  const map = new Map<string, number>();
+  if (!raw) return map;
+  for (const pair of raw.split(',')) {
+    const eqIdx = pair.indexOf('=');
+    if (eqIdx === -1) continue;
+    const dim = pair.slice(0, eqIdx).trim().toLowerCase();
+    const val = parseFloat(pair.slice(eqIdx + 1).trim());
+    if (dim && !Number.isNaN(val)) map.set(dim, val);
+  }
+  return map;
+}
 
 /**
  * Run the audit engine for the selected dimensions and emit a report.
@@ -149,6 +194,33 @@ async function runAudit(
     scorer(ctx, skipRules),
   );
 
+  // Phase 14: load and run plugin rules, appending findings to a plugin dimension.
+  const pluginPaths = flags.plugins ? flags.plugins.split(',').map((p) => p.trim()) : [];
+  const autoDiscovered = await discoverPlugins(targetPath);
+  const allPluginPaths = [...new Set([...autoDiscovered, ...pluginPaths])];
+  const plugins = await loadPlugins(allPluginPaths, { projectRoot: targetPath });
+
+  if (plugins.length > 0) {
+    const pluginFindings = plugins.flatMap((plugin) =>
+      plugin.rules.flatMap((rule) => {
+        try {
+          return rule.check(ctx);
+        } catch {
+          return [];
+        }
+      }),
+    );
+    if (pluginFindings.length > 0) {
+      let pluginScore = 100;
+      for (const f of pluginFindings) pluginScore -= SEVERITY_DEDUCTIONS[f.severity] ?? 0;
+      pluginScore = Math.max(0, Math.min(100, pluginScore));
+      dimensions.push({ dimension: 'plugins', score: pluginScore, findings: pluginFindings });
+    }
+    if (flags.verbose) {
+      logger.info(`Loaded ${plugins.length} plugin(s): ${plugins.map((p) => p.name).join(', ')}`);
+    }
+  }
+
   const overall = aggregateScores(dimensions);
 
   const result: AuditResult = {
@@ -167,12 +239,25 @@ async function runAudit(
     process.stdout.write(report + '\n');
   }
 
-  // CI quality gate — exit 1 when the score is below the threshold.
+  // Phase 13 — CI quality gates
+  // 13.1: exit 1 when the overall score is below the --threshold flag.
   if (flags.threshold != null && overall.weighted < flags.threshold) {
     logger.warn(
       `Score ${overall.weighted.toFixed(1)} is below threshold ${flags.threshold} — failing.`,
     );
     process.exitCode = 1;
+  }
+
+  // 13.2: exit 1 when any dimension score is below its configured per-dimension threshold.
+  const dimThresholds = parseDimThresholds(flags.dimThreshold);
+  for (const dim of dimensions) {
+    const dimLimit = dimThresholds.get(dim.dimension);
+    if (dimLimit != null && dim.score < dimLimit) {
+      logger.warn(
+        `Dimension '${dim.dimension}' score ${dim.score} is below threshold ${dimLimit} — failing.`,
+      );
+      process.exitCode = 1;
+    }
   }
 }
 
@@ -237,5 +322,15 @@ export const auditMaintCommand = addAuditFlags(
     .argument('[path]', 'path to the project root')
     .action(async (path: string | undefined, options: AuditFlags) => {
       await runAudit(resolveTargetPath(path), options, new Set(['maintenance']));
+    }),
+);
+
+/** `zaria audit:eff [path]` */
+export const auditEffCommand = addAuditFlags(
+  new Command('audit:eff')
+    .description('Run only the Efficiency audit')
+    .argument('[path]', 'path to the project root')
+    .action(async (path: string | undefined, options: AuditFlags) => {
+      await runAudit(resolveTargetPath(path), options, new Set(['efficiency']));
     }),
 );

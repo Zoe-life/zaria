@@ -1,0 +1,77 @@
+# .github/zaria-example.yml
+#
+# Copy this file to your repository as .github/workflows/zaria.yml to enable
+# automated code-quality gates powered by Zaria.
+#
+# The workflow runs on every push and pull request, fails the build when the
+# overall score drops below `threshold`, and posts the SARIF report to GitHub
+# Code Scanning so findings appear as annotations on pull requests.
+
+name: Zaria Code Audit
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+permissions:
+  contents: read
+  security-events: write  # required for uploading SARIF to GitHub Code Scanning
+
+jobs:
+  audit:
+    name: Run Zaria audit
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Run the audit using the official Zaria GitHub Action
+      - name: Audit codebase with Zaria
+        uses: zoe-life/zaria@v1
+        with:
+          # Path to audit (defaults to repository root)
+          path: '.'
+
+          # Overall score threshold — the workflow fails when the score is below this.
+          threshold: '75'
+
+          # Per-dimension thresholds (optional).
+          # Uncomment and adjust to enforce stricter gates per dimension:
+          # dim-threshold: 'performance=70,integrity=80,architecture=75'
+
+          # Output format for the console log (terminal, json, html, markdown, sarif).
+          format: terminal
+
+          # Uncomment to run only specific dimensions:
+          # only: 'performance,architecture'
+
+          # Uncomment to skip specific rules:
+          # skip: 'MAINT001,ARCH002'
+
+          # Uncomment to load Zaria plugins (installed in the project's node_modules):
+          # plugins: 'zaria-plugin-nextjs,zaria-plugin-prisma'
+
+          # Show the full finding list in the log.
+          verbose: 'true'
+
+      # 3. Generate a SARIF report for GitHub Code Scanning (separate step)
+      #    Requires Zaria v1+ and the security-events write permission above.
+      - name: Generate SARIF report
+        if: always()
+        uses: zoe-life/zaria@v1
+        with:
+          path: '.'
+          format: sarif
+          threshold: '0'   # never fail here — only upload
+          verbose: 'false'
+
+      - name: Upload SARIF to GitHub Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: zaria-report.sarif
+          category: zaria

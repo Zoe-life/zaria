@@ -7,6 +7,7 @@ import {
   auditScaleCommand,
   auditIntegrityCommand,
   auditMaintCommand,
+  auditEffCommand,
 } from './commands/audit.js';
 import { reportCommand } from './commands/report.js';
 import { configCommand } from './commands/config.js';
@@ -35,6 +36,7 @@ export function buildProgram(): Command {
   program.addCommand(auditScaleCommand);
   program.addCommand(auditIntegrityCommand);
   program.addCommand(auditMaintCommand);
+  program.addCommand(auditEffCommand);
   program.addCommand(reportCommand);
   program.addCommand(configCommand);
   program.addCommand(sreCommand);
