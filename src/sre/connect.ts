@@ -69,9 +69,6 @@ export interface ConnectResult {
  *   `ZARIA_SRE_BASE_URL`  — base URL of the SRE tool
  *   `ZARIA_SRE_TOKEN`     — API token / bearer token
  *   `ZARIA_SRE_APP_KEY`   — Datadog application key (Datadog only)
- *   `ZARIA_SRE_PROVIDER` — `prometheus | datadog | grafana`
- *   `ZARIA_SRE_BASE_URL` — base URL of the SRE tool
- *   `ZARIA_SRE_TOKEN`    — API token / bearer token
  *
  * @param options  Optional pre-configuration.
  * @param log      Callback for outputting wizard messages (default: console.log).
@@ -150,10 +147,6 @@ export async function runConnectWizard(
         ...(token ? { token } : {}),
       };
     }
-    const config: SreConfig = {
-      baseUrl,
-      ...(token ? { token } : {}),
-    };
 
     // Step 3: Optional connectivity test.
     let testPassed: boolean | undefined;
