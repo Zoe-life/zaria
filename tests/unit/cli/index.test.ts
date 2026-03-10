@@ -135,8 +135,8 @@ describe('CLI program', () => {
   });
 
   // plugin commands
-  it('plugin list: prints stub message', () => {
-    parse(['plugin', 'list']);
+  it('plugin list: prints stub message', async () => {
+    await parseAsync(['plugin', 'list']);
     expect(loggerInfoSpy).toHaveBeenCalledWith('No plugins installed.');
   });
 

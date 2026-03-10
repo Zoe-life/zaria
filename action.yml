@@ -1,0 +1,116 @@
+name: 'Zaria Code Audit'
+description: >
+  Enterprise-grade codebase quality audit with CI quality gates.
+  Scans your TypeScript/JavaScript project for performance, architecture,
+  scalability, integrity, maintenance, and efficiency issues, then fails
+  the build when the overall (or per-dimension) score drops below your
+  configured threshold.
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+# ---------------------------------------------------------------------------
+# Inputs
+# ---------------------------------------------------------------------------
+
+inputs:
+  path:
+    description: 'Path to the project root to audit (relative to the workspace).'
+    required: false
+    default: '.'
+
+  threshold:
+    description: >
+      Minimum overall score (0–100) required to pass the quality gate.
+      The action exits with code 1 when the score falls below this value.
+    required: false
+    default: '75'
+
+  dim-threshold:
+    description: >
+      Per-dimension score thresholds as comma-separated dim=score pairs.
+      Example: "performance=80,integrity=90"
+      The action exits with code 1 when any listed dimension falls below its threshold.
+    required: false
+    default: ''
+
+  format:
+    description: 'Report output format: terminal | json | html | markdown | sarif'
+    required: false
+    default: 'terminal'
+
+  only:
+    description: 'Comma-separated list of dimension names to run (e.g. performance,architecture).'
+    required: false
+    default: ''
+
+  skip:
+    description: 'Comma-separated rule IDs to skip (e.g. MAINT001,ARCH002).'
+    required: false
+    default: ''
+
+  plugins:
+    description: 'Comma-separated plugin package names or file paths to load.'
+    required: false
+    default: ''
+
+  verbose:
+    description: 'Set to "true" to include the full finding list in the terminal report.'
+    required: false
+    default: 'false'
+
+# ---------------------------------------------------------------------------
+# Outputs
+# ---------------------------------------------------------------------------
+
+outputs:
+  score:
+    description: 'Overall weighted score (0–100) produced by this audit run.'
+    value: ${{ steps.audit.outputs.score }}
+
+  grade:
+    description: 'Letter grade (A–F) derived from the overall score.'
+    value: ${{ steps.audit.outputs.grade }}
+
+# ---------------------------------------------------------------------------
+# Implementation
+# ---------------------------------------------------------------------------
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Zaria
+      shell: bash
+      run: npm install --global zaria
+
+    - name: Run Zaria audit
+      id: audit
+      shell: bash
+      run: |
+        ARGS=("${{ inputs.path }}")
+        ARGS+=(--output "${{ inputs.format }}")
+        ARGS+=(--threshold "${{ inputs.threshold }}")
+
+        if [ -n "${{ inputs.dim-threshold }}" ]; then
+          ARGS+=(--dim-threshold "${{ inputs.dim-threshold }}")
+        fi
+        if [ -n "${{ inputs.only }}" ]; then
+          ARGS+=(--only "${{ inputs.only }}")
+        fi
+        if [ -n "${{ inputs.skip }}" ]; then
+          ARGS+=(--skip "${{ inputs.skip }}")
+        fi
+        if [ -n "${{ inputs.plugins }}" ]; then
+          ARGS+=(--plugins "${{ inputs.plugins }}")
+        fi
+        if [ "${{ inputs.verbose }}" = "true" ]; then
+          ARGS+=(-v)
+        fi
+
+        zaria audit "${ARGS[@]}"
