@@ -47,8 +47,6 @@ sreCommand
   .option('--token <token>', 'API token / API key')
   .option('--app-key <key>', 'Datadog application key (required for Datadog metric queries)')
   .action(async (options: { provider?: string; url?: string; token?: string; appKey?: string }) => {
-  .option('--token <token>', 'API token')
-  .action(async (options: { provider?: string; url?: string; token?: string }) => {
     if (!options.provider || !options.url) {
       logger.info('No SRE providers configured. Run `zaria sre connect` to set one up.');
       return;
@@ -63,7 +61,6 @@ sreCommand
       cfg = { baseUrl: options.url, token: options.token };
     }
 
-    const cfg: SreConfig = { baseUrl: options.url, token: options.token };
     try {
       const adapter = createProvider(options.provider as ProviderName, cfg);
       const ok = await adapter.test();
