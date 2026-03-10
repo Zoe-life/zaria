@@ -1,5 +1,5 @@
 /**
- * Public API for the Zaria audit engine — Phase 4–9 barrel exports.
+ * Public API for the Zaria audit engine — Phase 4–13 barrel exports.
  */
 
 export type {
@@ -34,3 +34,6 @@ export { INTEGRITY_RULES, scoreIntegrity } from './integrity/scorer.js';
 
 // Phase 9 — Long-Term Maintenance
 export { MAINTENANCE_RULES, scoreMaintenance } from './maintenance/scorer.js';
+
+// Phase 13 — Efficiency
+export { EFFICIENCY_RULES, scoreEfficiency } from './efficiency/scorer.js';
