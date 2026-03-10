@@ -31,6 +31,8 @@ function addAuditFlags(cmd: Command): Command {
     )
     .option('--only <dimensions>', 'comma-separated dimension names to run (e.g. performance,architecture)')
     .option('--skip <rules>', 'comma-separated rule IDs to skip (e.g. MAINT001,ARCH002)')
+    .option('--only <dimensions>', 'comma-separated dimensions to run')
+    .option('--skip <dimensions>', 'comma-separated dimensions to skip')
     .option('-v, --verbose', 'include full finding list in terminal output');
 }
 
@@ -59,6 +61,10 @@ function parseDimensionList(raw: string | undefined): Set<DimensionName> {
 function parseRuleList(raw: string | undefined): Set<string> {
   if (!raw) return new Set();
   return new Set(raw.split(',').map((s) => s.trim().toUpperCase()));
+/** Parse a comma-separated list into a lowercase Set. */
+function parseList(raw: string | undefined): Set<string> {
+  if (!raw) return new Set();
+  return new Set(raw.split(',').map((s) => s.trim().toLowerCase()));
 }
 
 /** Validate and normalise the output format, falling back to 'terminal'. */
@@ -112,6 +118,7 @@ const ALL_DIMENSIONS: ReadonlyArray<{
  *                      sub-commands like `audit:perf`).  The `--only` flag is
  *                      merged with this set: when both are provided the
  *                      sub-command's set takes precedence.
+ * @param limitToNames  When non-empty, only run scorers in this set.
  */
 async function runAudit(
   targetPath: string,
@@ -140,6 +147,9 @@ async function runAudit(
 
   const activeDimensions = ALL_DIMENSIONS.filter(
     (d) => effectiveLimit.size === 0 || effectiveLimit.has(d.name),
+  const skipRules = parseList(flags.skip);
+  const activeDimensions = ALL_DIMENSIONS.filter(
+    (d) => limitToNames.size === 0 || limitToNames.has(d.name),
   );
 
   const dimensions: DimensionResult[] = activeDimensions.map(({ scorer }) =>

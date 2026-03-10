@@ -68,6 +68,9 @@ export function gradeFromScore(score: number): Grade {
  * Known dimensions use their configured weights (summing to 1.0).  When only
  * a subset of dimensions is scored, the function normalises by the actual
  * total weight so the score remains in the [0, 100] range.
+ * Dimensions whose `dimension` name is not in `DIMENSION_WEIGHTS` receive
+ * an equal share of the remaining unaccounted weight so the function is
+ * forward-compatible with new dimensions added in future phases.
  *
  * @param dimensions  Array of `DimensionResult` objects to aggregate.
  * @returns           `OverallScore` with `weighted`, `grade`, and `breakdown`.

@@ -12,6 +12,8 @@
  * When only `token` is supplied it is used as the API key alone; metric queries
  * will succeed only when the Datadog organisation does not require an app key
  * (rare).  For full functionality always supply both keys via `basicAuth`.
+ * The adapter accepts the API key via `token` and the application key via
+ * `basicAuth` (convention: `"<api-key>:<app-key>"`).
  *
  * Time  O(S)  where S = number of series returned.
  * Space O(S).
@@ -45,6 +47,7 @@ interface DatadogQueryResponse {
  * @example
  * ```ts
  * // Provide both API key and application key via basicAuth: "apikey:appkey"
+ * // token = API key, basicAuth = "api-key:app-key"
  * const dd = new DatadogAdapter({ baseUrl: 'https://api.datadoghq.com', basicAuth: 'apikey:appkey' });
  * if (await dd.test()) {
  *   const metrics = await dd.fetchMetrics('avg:system.cpu.user{*}');
@@ -66,6 +69,7 @@ export class DatadogAdapter implements SreProvider {
     // Parse credentials: basicAuth = "apikey:appkey" (preferred for fetchMetrics).
     // Falling back to token-only sets appKey to '' which works for test() but
     // will cause fetchMetrics() to fail on most Datadog organisations.
+    // Parse credentials: token = DD-API-KEY, basicAuth = "apikey:appkey"
     if (cfg.basicAuth) {
       const sep = cfg.basicAuth.indexOf(':');
       this.apiKey = cfg.basicAuth.slice(0, sep);

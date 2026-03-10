@@ -86,18 +86,20 @@ Zaria analyses static code, project structure, dependency graphs, and configurat
 
 Zaria is built with **Node.js / TypeScript** — chosen for its best-in-class JS/TS AST tooling, vast npm ecosystem, and easy `npx` distribution.
 
-| Concern | Choice |
-|---|---|
-| Language | TypeScript 5.x |
-| CLI framework | [Commander.js](https://github.com/tj/commander.js) + [Ink](https://github.com/vadimdemedes/ink) |
-| Static analysis | [ts-morph](https://ts-morph.com/), [ESLint API](https://eslint.org/docs/developer-guide/nodejs-api) |
-| Dependency graph | [madge](https://github.com/pahen/madge) |
-| SRE HTTP client | [Axios](https://axios-http.com/) |
-| Config parsing | [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) |
-| Report generation | [chalk](https://github.com/chalk/chalk), [cli-table3](https://github.com/cli-table/cli-table3) |
-| Testing | [Vitest](https://vitest.dev/) |
-| Distribution | npm / `npx zaria` |
-| Plugin system | ESM dynamic `import()` with a typed plugin interface |
+| Concern | Choice | Rationale |
+|---|---|---|
+| Language | TypeScript 5.x | |
+| CLI framework | [Commander.js](https://github.com/tj/commander.js) | |
+| Static analysis | [ts-morph](https://ts-morph.com/) | TypeScript-native AST; supersedes ESLint API for our use case |
+| Dependency graph | ts-morph import graph (built-in) | ARCH001 gets full graph; madge is CJS-only and redundant |
+| SRE HTTP client | Native `fetch` (Node.js ≥ 20) | Sufficient; axios adds 2.4 MB + 3 transitive deps for no benefit |
+| Terminal colours | [chalk v5](https://github.com/chalk/chalk) | ESM-native, zero deps, handles `NO_COLOR`/`FORCE_COLOR`/CI |
+| Config parsing | [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) | |
+| Schema validation | [Zod](https://zod.dev/) | |
+| Logging | [pino](https://getpino.io/) + pino-pretty | |
+| Testing | [Vitest](https://vitest.dev/) | |
+| Distribution | npm / `npx zaria` | |
+| Plugin system | ESM dynamic `import()` with a typed plugin interface | |
 
 ---
 
@@ -330,6 +332,31 @@ Zaria can optionally connect to your organisation's SRE tooling to enrich static
 | **Data Integrity & Race Conditions** | `src/audit/integrity/` | INT001–INT004 |
 | **Long-Term Maintenance** | `src/audit/maintenance/` | MAINT001–MAINT005 |
 
+### Scoring & Reporting (Phases 10–11)
+
+| Module | Location | Description |
+|---|---|---|
+| **Aggregation scorer** | `src/scorer/aggregate.ts` | Weighted overall score (0–100) + letter grade (A–F) |
+| **Terminal reporter** | `src/report/terminal.ts` | ANSI-coloured TTY output with progress bars |
+| **JSON reporter** | `src/report/json.ts` | Machine-readable structured JSON |
+| **Markdown reporter** | `src/report/markdown.ts` | GitHub/GitLab PR-comment format with emoji badges |
+| **HTML reporter** | `src/report/html.ts` | Self-contained, offline-capable HTML report |
+| **SARIF reporter** | `src/report/sarif.ts` | SARIF 2.1.0 for GitHub Code Scanning / Azure DevOps |
+
+**Scoring weights:** Performance 25 % · Architecture 25 % · Scalability 20 % · Integrity 20 % · Maintenance 10 %
+
+**Grade thresholds:** A (≥ 90) · B (≥ 80) · C (≥ 70) · D (≥ 60) · F (< 60)
+
+### SRE Integration (Phase 12)
+
+| Adapter | Location | Auth |
+|---|---|---|
+| **Prometheus** | `src/sre/prometheus.ts` | Bearer token / HTTP Basic |
+| **Datadog** | `src/sre/datadog.ts` | `DD-API-KEY` + `DD-APPLICATION-KEY` |
+| **Grafana** | `src/sre/grafana.ts` | Service-account Bearer token / HTTP Basic |
+
+Configure via interactive wizard (`zaria sre connect`) or env vars (`ZARIA_SRE_PROVIDER`, `ZARIA_SRE_BASE_URL`, `ZARIA_SRE_TOKEN`).
+
 ---
 
 ## Roadmap
@@ -340,10 +367,10 @@ Zaria can optionally connect to your organisation's SRE tooling to enrich static
 | **v0.2** | Phase 4–6 | Full five-dimension audit engine for JS/TS web apps |
 | **v0.3** | Phase 7–8 | Scalability & Observability + Data Integrity & Race Conditions engines |
 | **v0.4** ✅ | Phase 9 | Long-Term Maintenance engine — cyclomatic complexity, code duplication, deprecated/outdated dependencies, missing test coverage |
-| **v0.5** | Phase 10–11 | Weighted scoring & aggregation, HTML/JSON/SARIF report output, CI quality gates |
-| **v0.6** | Phase 12 | Plugin architecture, public plugin registry |
-| **v1.0** | Phase 13 | Production-ready, documentation, distribution (npm + binary) |
-| **v1.x** | Phase 14+ | Python codebase support, mobile app auditing, enterprise dashboard |
+| **v0.5** ✅ | Phase 10–11 | Weighted scoring & aggregation, five report formats, real audit pipeline |
+| **v0.6** ✅ | Phase 12 | Prometheus, Datadog, and Grafana SRE adapters; interactive `sre connect` wizard |
+| **v1.0** | Phase 13–14 | CI quality gates, plugin architecture, npm publish |
+| **v1.x** | Phase 15+ | Python support, mobile auditing, enterprise dashboard |
 
 ---
 
