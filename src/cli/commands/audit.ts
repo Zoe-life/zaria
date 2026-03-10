@@ -29,6 +29,8 @@ function addAuditFlags(cmd: Command): Command {
       'fail if overall score is below this value (0–100)',
       parseFloat,
     )
+    .option('--only <dimensions>', 'comma-separated dimension names to run (e.g. performance,architecture)')
+    .option('--skip <rules>', 'comma-separated rule IDs to skip (e.g. MAINT001,ARCH002)')
     .option('--only <dimensions>', 'comma-separated dimensions to run')
     .option('--skip <dimensions>', 'comma-separated dimensions to skip')
     .option('-v, --verbose', 'include full finding list in terminal output');
@@ -38,6 +40,27 @@ function resolveTargetPath(p: string | undefined): string {
   return resolve(p ?? '.');
 }
 
+/**
+ * Parse a comma-separated list of dimension names into a lowercase Set.
+ * Dimension names are always lowercase (e.g. 'performance', 'architecture').
+ */
+function parseDimensionList(raw: string | undefined): Set<DimensionName> {
+  if (!raw) return new Set();
+  return new Set(raw.split(',').map((s) => s.trim().toLowerCase()) as DimensionName[]);
+}
+
+/**
+ * Parse a comma-separated list of rule IDs into an uppercase Set.
+ * Rule IDs are always uppercase (e.g. 'MAINT001', 'ARCH002').
+ *
+ * BUG 1 FIX: The original implementation used .toLowerCase() here, which
+ * caused skipRules to never match rule.id values (which are uppercase like
+ * 'MAINT002').  Rule IDs must be uppercased for the Set.has() check in each
+ * scorer to succeed.
+ */
+function parseRuleList(raw: string | undefined): Set<string> {
+  if (!raw) return new Set();
+  return new Set(raw.split(',').map((s) => s.trim().toUpperCase()));
 /** Parse a comma-separated list into a lowercase Set. */
 function parseList(raw: string | undefined): Set<string> {
   if (!raw) return new Set();
@@ -91,6 +114,10 @@ const ALL_DIMENSIONS: ReadonlyArray<{
  *
  * @param targetPath    Absolute path to the project to analyse.
  * @param flags         Parsed CLI flags.
+ * @param limitToNames  When non-empty, only run scorers in this set (used by
+ *                      sub-commands like `audit:perf`).  The `--only` flag is
+ *                      merged with this set: when both are provided the
+ *                      sub-command's set takes precedence.
  * @param limitToNames  When non-empty, only run scorers in this set.
  */
 async function runAudit(
@@ -106,6 +133,20 @@ async function runAudit(
   const parsedFiles = parseFiles(sourceFiles);
   const ctx = buildAnalysisContext(targetPath, parsedFiles);
 
+  // BUG 1 FIX: use parseRuleList (toUpperCase) so that rule IDs like
+  // 'MAINT002' match what scorers check via skipRules.has(rule.id).
+  const skipRules = parseRuleList(flags.skip);
+
+  // BUG 2 FIX: honour the --only flag by parsing it as dimension names and
+  // merging with any sub-command-level limitToNames.  Sub-command limits take
+  // precedence (they already narrow to a single dimension); the --only flag is
+  // only applied when no sub-command restriction is active.
+  const onlyFlag = parseDimensionList(flags.only);
+  const effectiveLimit: ReadonlySet<DimensionName> =
+    limitToNames.size > 0 ? limitToNames : onlyFlag;
+
+  const activeDimensions = ALL_DIMENSIONS.filter(
+    (d) => effectiveLimit.size === 0 || effectiveLimit.has(d.name),
   const skipRules = parseList(flags.skip);
   const activeDimensions = ALL_DIMENSIONS.filter(
     (d) => limitToNames.size === 0 || limitToNames.has(d.name),

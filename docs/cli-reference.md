@@ -464,11 +464,40 @@ zaria audit [path] [options]
 
 | Flag | Description | Default |
 |---|---|---|
-| `-o, --output <format>` | Output format: `terminal|json|html|markdown|sarif` | `terminal` |
+| `-o, --output <format>` | Output format: `terminal\|json\|html\|markdown\|sarif` | `terminal` |
 | `-f, --file <path>` | Write report to file instead of stdout | — |
-| `-t, --threshold <score>` | Fail with exit code 1 if overall score is below this value (0–100) | — |
-| `--only <dimensions>` | Comma-separated list of audit dimensions to run | — |
-| `--skip <dimensions>` | Comma-separated list of audit dimensions to skip | — |
+| `-t, --threshold <score>` | Exit with code 1 if overall score is below this value (0–100) | — |
+| `--only <dimensions>` | Comma-separated list of dimension names to run (e.g. `performance,architecture`) | — |
+| `--skip <rules>` | Comma-separated list of rule IDs to skip (e.g. `MAINT001,ARCH002`) | — |
+| `-v, --verbose` | Include full finding list in terminal output | `false` |
+
+**Examples**
+
+```bash
+# Full audit of current directory, terminal output
+zaria audit
+
+# Audit a specific project, output as JSON to a file
+zaria audit ./api-service -o json -f audit-report.json
+
+# CI/CD: fail the pipeline if overall score drops below 70
+zaria audit --threshold 70
+
+# Self-contained HTML report
+zaria audit -o html -f report.html
+
+# SARIF for GitHub Code Scanning
+zaria audit -o sarif -f results.sarif
+
+# Run only the performance and architecture dimensions
+zaria audit --only performance,architecture
+
+# Skip a noisy rule across all dimensions (use uppercase rule IDs)
+zaria audit --skip MAINT002
+
+# Show verbose finding list in terminal
+zaria audit -v
+```
 
 ---
 
@@ -544,7 +573,7 @@ zaria report [options]
 
 | Flag | Description | Default |
 |---|---|---|
-| `-o, --output <format>` | Output format: `terminal|json|html|markdown|sarif` | `terminal` |
+| `-o, --output <format>` | Output format: `terminal\|json\|html\|markdown\|sarif` | `terminal` |
 | `-f, --file <path>` | Write report to file instead of stdout | — |
 
 ---
@@ -612,21 +641,62 @@ Exits with code 1 when the config is invalid.
 
 ### `sre connect`
 
-Interactively configure an SRE tool connection.
+Interactively configure an SRE tool connection. In a TTY, prompts for provider selection, base URL, and API credentials. In CI/CD environments, reads from environment variables.
 
 ```bash
-zaria sre connect
+zaria sre connect [options]
 ```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `-p, --provider <name>` | Pre-select provider: `prometheus\|datadog\|grafana` |
+
+**Environment Variables (non-TTY / CI mode)**
+
+| Variable | Description |
+|---|---|
+| `ZARIA_SRE_PROVIDER` | Provider name: `prometheus`, `datadog`, or `grafana` |
+| `ZARIA_SRE_BASE_URL` | Base URL of the SRE tool API |
+| `ZARIA_SRE_TOKEN` | API token / bearer token (for Prometheus and Grafana, also Datadog API key) |
+| `ZARIA_SRE_APP_KEY` | Datadog application key — required for Datadog metric queries (`DD-APPLICATION-KEY`) |
+
+Exits with code 1 if the connectivity test fails.
 
 ---
 
 ### `sre test`
 
-Test connectivity to configured SRE tools.
+Test connectivity to a configured SRE provider.
 
 ```bash
-zaria sre test
+zaria sre test [options]
 ```
+
+**Options**
+
+| Flag | Description |
+|---|---|
+| `-p, --provider <name>` | Provider: `prometheus\|datadog\|grafana` |
+| `--url <url>` | Base URL of the provider |
+| `--token <token>` | API token / API key |
+| `--app-key <key>` | Datadog application key (required for Datadog metric queries) |
+
+**Examples**
+
+```bash
+# Test Prometheus connectivity
+zaria sre test --provider prometheus --url https://prom.example.com --token mytoken
+
+# Test Datadog connectivity (both API key and application key required for full access)
+zaria sre test --provider datadog --url https://api.datadoghq.com --token myapikey --app-key myappkey
+
+# Test Grafana connectivity
+zaria sre test --provider grafana --url https://grafana.example.com --token glsa_xxx
+```
+
+Exits with code 0 on success, code 1 on failure.
 
 ---
 
@@ -660,6 +730,44 @@ zaria plugin remove <name>
 
 ---
 
+## Report Formats
+
+| Format | Flag | Description |
+|---|---|---|
+| `terminal` | `-o terminal` | ANSI-coloured output with progress bars and grade badge |
+| `json` | `-o json` | Machine-readable JSON (full `AuditResult` structure) |
+| `markdown` | `-o markdown` | GitHub / GitLab PR-comment format with emoji severity badges |
+| `html` | `-o html` | Self-contained, offline-capable HTML report |
+| `sarif` | `-o sarif` | SARIF 2.1.0 for GitHub Code Scanning, Azure DevOps, VS Code |
+
+All formats can be written to a file with `-f <path>`.
+
+---
+
+## Scoring
+
+Zaria computes a **weighted overall score** from five dimension scores (each 0–100):
+
+| Dimension | Weight |
+|---|---|
+| Performance | 25 % |
+| Architecture | 25 % |
+| Scalability & Observability | 20 % |
+| Data Integrity & Race Conditions | 20 % |
+| Long-Term Maintenance | 10 % |
+
+**Grade thresholds:**
+
+| Grade | Score range |
+|---|---|
+| **A** | 90–100 |
+| **B** | 80–89 |
+| **C** | 70–79 |
+| **D** | 60–69 |
+| **F** | 0–59 |
+
+---
+
 ## Examples
 
 ```bash
@@ -672,14 +780,29 @@ zaria audit ./api-service -o json -f audit-report.json
 # CI/CD: fail the pipeline if overall score drops below 70
 zaria audit --threshold 70
 
-# Run only architecture and maintenance audits
-zaria audit --only arch,maint
+# Run only architecture and maintenance audits (use full dimension names)
+zaria audit --only architecture,maintenance
+
+# Generate a self-contained HTML report
+zaria audit -o html -f report.html
+
+# Generate SARIF for GitHub Code Scanning
+zaria audit -o sarif -f results.sarif
 
 # Initialise config for a project
 zaria config init
 
 # Validate an existing config
 zaria config validate
+
+# Connect a Prometheus SRE provider
+zaria sre connect --provider prometheus
+
+# Connect a Datadog SRE provider (wizard will prompt for both API key and application key)
+zaria sre connect --provider datadog
+
+# Test Datadog connectivity
+zaria sre test --provider datadog --url https://api.datadoghq.com --token myapikey --app-key myappkey
 ```
 
 ---

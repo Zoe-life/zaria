@@ -65,6 +65,10 @@ export interface ConnectResult {
  *
  * The wizard reads from `stdin` in interactive TTY environments.  In
  * non-interactive environments it reads from `ZARIA_SRE_*` env vars:
+ *   `ZARIA_SRE_PROVIDER`  — `prometheus | datadog | grafana`
+ *   `ZARIA_SRE_BASE_URL`  — base URL of the SRE tool
+ *   `ZARIA_SRE_TOKEN`     — API token / bearer token
+ *   `ZARIA_SRE_APP_KEY`   — Datadog application key (Datadog only)
  *   `ZARIA_SRE_PROVIDER` — `prometheus | datadog | grafana`
  *   `ZARIA_SRE_BASE_URL` — base URL of the SRE tool
  *   `ZARIA_SRE_TOKEN`    — API token / bearer token
@@ -120,6 +124,32 @@ export async function runConnectWizard(
     );
     const token = await ask('   API Token (leave blank for none): ', 'ZARIA_SRE_TOKEN');
 
+    // BUG 3 FIX: Datadog requires both an API key (token) and an application
+    // key (DD-APPLICATION-KEY) for metric queries.  The original code only
+    // collected the API key and left appKey empty, causing fetchMetrics() to
+    // fail with 403 after a "successful" wizard session.  We now ask for the
+    // app key when Datadog is selected and encode both as basicAuth.
+    let config: SreConfig;
+    if (providerName === 'datadog') {
+      const appKey = await ask(
+        '   Application Key (required for metric queries): ',
+        'ZARIA_SRE_APP_KEY',
+      );
+      if (token && appKey) {
+        // Encode as "apikey:appkey" in basicAuth — the convention DatadogAdapter expects.
+        config = { baseUrl, basicAuth: `${token}:${appKey}` };
+      } else if (token) {
+        // API key only: test() will pass but fetchMetrics() may fail.
+        config = { baseUrl, token };
+      } else {
+        config = { baseUrl };
+      }
+    } else {
+      config = {
+        baseUrl,
+        ...(token ? { token } : {}),
+      };
+    }
     const config: SreConfig = {
       baseUrl,
       ...(token ? { token } : {}),

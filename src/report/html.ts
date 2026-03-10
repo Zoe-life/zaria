@@ -8,6 +8,7 @@
  * Design goals:
  *   • Responsive, readable at any viewport width.
  *   • A11y-friendly colour contrast ratios (WCAG AA).
+ *   • Zero runtime dependencies (only inlined CSS).
  *   • Zero runtime dependencies (only inlined CSS + vanilla JS).
  *
  * Time  O(F)  where F = total findings.

@@ -29,18 +29,40 @@ sreCommand
     }
   });
 
-/** `zaria sre test` — pings configured SRE providers. */
+/**
+ * `zaria sre test` — pings configured SRE providers.
+ *
+ * BUG 3/4 FIX: Added `--app-key` option for Datadog.  Datadog requires both
+ * an API key (`--token`) and an application key (`--app-key`) for metric
+ * queries.  When both are provided they are encoded as `basicAuth` in the
+ * format `"apikey:appkey"` which `DatadogAdapter` expects.  Without the app
+ * key, `adapter.test()` (which only validates the API key) would succeed but
+ * subsequent `fetchMetrics()` calls would fail with 403.
+ */
 sreCommand
   .command('test')
   .description('Test connectivity to configured SRE tools')
   .option('-p, --provider <name>', 'provider name: prometheus|datadog|grafana')
   .option('--url <url>', 'base URL of the provider')
+  .option('--token <token>', 'API token / API key')
+  .option('--app-key <key>', 'Datadog application key (required for Datadog metric queries)')
+  .action(async (options: { provider?: string; url?: string; token?: string; appKey?: string }) => {
   .option('--token <token>', 'API token')
   .action(async (options: { provider?: string; url?: string; token?: string }) => {
     if (!options.provider || !options.url) {
       logger.info('No SRE providers configured. Run `zaria sre connect` to set one up.');
       return;
     }
+
+    // Build SreConfig: for Datadog encode both keys as basicAuth when app-key
+    // is supplied so DatadogAdapter can set DD-APPLICATION-KEY on requests.
+    let cfg: SreConfig;
+    if (options.provider === 'datadog' && options.token && options.appKey) {
+      cfg = { baseUrl: options.url, basicAuth: `${options.token}:${options.appKey}` };
+    } else {
+      cfg = { baseUrl: options.url, token: options.token };
+    }
+
     const cfg: SreConfig = { baseUrl: options.url, token: options.token };
     try {
       const adapter = createProvider(options.provider as ProviderName, cfg);
