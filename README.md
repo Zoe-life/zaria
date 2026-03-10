@@ -86,18 +86,20 @@ Zaria analyses static code, project structure, dependency graphs, and configurat
 
 Zaria is built with **Node.js / TypeScript** — chosen for its best-in-class JS/TS AST tooling, vast npm ecosystem, and easy `npx` distribution.
 
-| Concern | Choice |
-|---|---|
-| Language | TypeScript 5.x |
-| CLI framework | [Commander.js](https://github.com/tj/commander.js) |
-| Static analysis | [ts-morph](https://ts-morph.com/) |
-| SRE HTTP client | Native `fetch` (Node.js ≥ 20) |
-| Config parsing | [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) |
-| Schema validation | [Zod](https://zod.dev/) |
-| Logging | [pino](https://getpino.io/) + pino-pretty |
-| Testing | [Vitest](https://vitest.dev/) |
-| Distribution | npm / `npx zaria` |
-| Plugin system | ESM dynamic `import()` with a typed plugin interface |
+| Concern | Choice | Rationale |
+|---|---|---|
+| Language | TypeScript 5.x | |
+| CLI framework | [Commander.js](https://github.com/tj/commander.js) | |
+| Static analysis | [ts-morph](https://ts-morph.com/) | TypeScript-native AST; supersedes ESLint API for our use case |
+| Dependency graph | ts-morph import graph (built-in) | ARCH001 gets full graph; madge is CJS-only and redundant |
+| SRE HTTP client | Native `fetch` (Node.js ≥ 20) | Sufficient; axios adds 2.4 MB + 3 transitive deps for no benefit |
+| Terminal colours | [chalk v5](https://github.com/chalk/chalk) | ESM-native, zero deps, handles `NO_COLOR`/`FORCE_COLOR`/CI |
+| Config parsing | [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) | |
+| Schema validation | [Zod](https://zod.dev/) | |
+| Logging | [pino](https://getpino.io/) + pino-pretty | |
+| Testing | [Vitest](https://vitest.dev/) | |
+| Distribution | npm / `npx zaria` | |
+| Plugin system | ESM dynamic `import()` with a typed plugin interface | |
 
 ---
 
