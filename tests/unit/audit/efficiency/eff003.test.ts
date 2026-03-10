@@ -6,7 +6,6 @@ import { buildAnalysisContext } from '../../../../src/audit/context.ts';
 import type { AnalysisContext } from '../../../../src/audit/types.ts';
 import { eff003 } from '../../../../src/audit/efficiency/rules/eff003.ts';
 
-const SAMPLE_TS_APP = resolve(import.meta.dirname, '../../../fixtures/sample-ts-app');
 const CLEAN_APP = resolve(import.meta.dirname, '../../../fixtures/clean-app');
 
 function ctxWithContent(content: string): AnalysisContext {
@@ -35,11 +34,9 @@ function ctxWithContent(content: string): AnalysisContext {
 }
 
 describe('EFF003 — ReDoS-Susceptible Pattern', () => {
-  let sampleCtx!: AnalysisContext;
   let cleanCtx!: AnalysisContext;
 
   beforeAll(() => {
-    sampleCtx = buildAnalysisContext(SAMPLE_TS_APP, parseFiles(traverseFiles(SAMPLE_TS_APP)));
     cleanCtx = buildAnalysisContext(CLEAN_APP, parseFiles(traverseFiles(CLEAN_APP)));
   });
 
@@ -108,10 +105,14 @@ const unsafe = /(a+)+b/;`;
     expect(findings).toHaveLength(0);
   });
 
-  it('detects ReDoS patterns in sample-ts-app efficiency fixture', () => {
-    const findings = eff003.check(sampleCtx);
-    expect(findings.length).toBeGreaterThan(0);
-    expect(findings[0].ruleId).toBe('EFF003');
+  it('detects multiple ReDoS patterns in the same file', () => {
+    const content = `
+const re1 = /(a+)+b/;
+const re2 = /(\w|\d)+end/;
+`;
+    const findings = eff003.check(ctxWithContent(content));
+    expect(findings.length).toBeGreaterThanOrEqual(2);
+    findings.forEach((f) => expect(f.ruleId).toBe('EFF003'));
   });
 
   it('produces zero findings on clean-app', () => {

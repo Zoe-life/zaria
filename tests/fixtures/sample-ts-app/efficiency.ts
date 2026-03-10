@@ -1,6 +1,8 @@
 /**
  * Efficiency fixture — Phase 13.
- * Intentionally contains seeded issues that EFF001–EFF003 should detect.
+ * Intentionally contains seeded issues that EFF001–EFF002 should detect.
+ * EFF003 (ReDoS) is tested via inline content in tests/unit/audit/efficiency/eff003.test.ts
+ * to avoid embedding genuinely dangerous regex literals in the codebase.
  */
 
 // ---------------------------------------------------------------------------
@@ -48,20 +50,4 @@ export function findPositions(haystack: number[], needles: number[]): number[] {
     if (pos !== -1) positions.push(pos);
   }
   return positions;
-}
-
-// ---------------------------------------------------------------------------
-// EFF003 — ReDoS-Susceptible Pattern (dangerous regex literals)
-// ---------------------------------------------------------------------------
-
-const NESTED_QUANT_PATTERN = /(a+)+b/;
-
-const ALTERNATION_QUANT_PATTERN = /(\w|\d)+end/;
-
-export function matchNested(input: string): boolean {
-  return NESTED_QUANT_PATTERN.test(input);
-}
-
-export function matchAlternation(input: string): boolean {
-  return ALTERNATION_QUANT_PATTERN.test(input);
 }
