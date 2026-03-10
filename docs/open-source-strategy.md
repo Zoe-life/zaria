@@ -1,285 +1,265 @@
-# Commercialisation Strategy — Zaria Monetisation Options
+# Licensing & Commercialisation Strategy — Zaria
 
-> **Context:** Zaria has **no licence applied yet** and has **not been publicly released**. There is only one contributor: the original author. This document evaluates every realistic monetisation path given that starting position — including fully proprietary options that would no longer be available once an open-source licence is applied or the code is publicised.
-
----
-
-## Your Current Position (and Why It Matters)
-
-**No licence = "All Rights Reserved" by default.** Under copyright law, code without an explicit licence cannot legally be used, copied, modified, or distributed by anyone other than the author. This is actually the *most commercially powerful* starting point:
-
-- **You retain all rights.** No one can embed Zaria in their product, host it as a service, or resell it without your explicit permission.
-- **You are the sole contributor.** There are no co-authors whose consent is needed to adopt any licence — including strong copyleft or dual-licence arrangements that would be legally complex or impossible to adopt retroactively once external contributors exist.
-- **You have not yet publicised the project.** You can make the licence decision *before* your first public users form expectations, which is the best possible time to do so.
-
-This document is therefore broader than a typical open-source strategy guide. All options — from fully proprietary to fully permissive — are genuinely available to you right now.
+> **Status (March 2026):** AGPL-3.0-or-later has been applied. This document records the rationale for that decision, defines the two-tier model (AGPL community + Enterprise commercial), and analyses which specific features are candidates for eventual MIT relicensing — and which are not.
 
 ---
 
-## The Core Tension
+## Why AGPL First
 
-Open-source drives adoption. Adoption creates the community, trust, and ecosystem that make the tool valuable enough to charge for. The risk is giving everything away and having no lever to monetise. The resolution is to decide *which layer and which rights* you monetise, not simply *whether* you open-source.
+Zaria was written by a single author and had no licence applied before this decision. That starting position made it legally clean to choose any licence — including strong copyleft — without needing consent from any other contributor or risking community backlash from a retroactive change.
 
----
+AGPL-3.0 was chosen as the opening licence for three reasons:
 
-## Model 0 — Fully Proprietary (Closed Source)
-
-**How it works:**  
-Keep the "All Rights Reserved" default that applies right now. Distribute Zaria only as compiled binaries or via a paid SaaS product. No source code is made public. Customers buy a commercial licence to use the software.
-
-**Revenue lever:** Perpetual-licence sales, annual subscriptions, or SaaS pricing — all with no obligation to open-source anything.
-
-**Examples:** JetBrains IDEs, Snyk Enterprise (before partial open-sourcing), many B2B dev-tools before reaching scale.
-
-**Pros:**
-- Maximum commercial control — competitors cannot copy, fork, or self-host without paying.
-- No split-maintenance burden (community vs enterprise editions).
-- Simple legal posture: one licence, one codebase.
-- No community contribution management overhead.
-
-**Cons:**
-- Developer adoption is slower — the "try before you buy" friction is highest when there is no free or open tier.
-- Sales cycle is longer without a free community edition driving word-of-mouth.
-- No community contributions to improve the engine.
-- Harder to build ecosystem integrations (plugins, IDE extensions) when source is closed.
-
-**Verdict:** A viable choice if you plan to sell directly to enterprises from day one and do not need community adoption to reach your first customers. Harder to build a large developer user base without some open tier. Consider pairing with a free SaaS trial tier.
+1. **Network-copyleft closes the SaaS loophole.** Any company that runs a modified version of Zaria as a networked service must publish their modifications under AGPL. GPL-3.0 would not cover this case; AGPL does. This is the primary commercial protection at this stage.
+2. **Full source visibility builds trust.** Developers can read, audit, fork, and self-host Zaria freely. This drives adoption — the community that forms under AGPL becomes the funnel for enterprise sales.
+3. **AGPL is the easiest licence to move *from*, selectively.** Moving specific modules from AGPL to MIT is uncontroversial and entirely at the author's discretion as sole copyright holder. Moving in the reverse direction is impossible without unanimous contributor consent. Starting under AGPL keeps all future options open.
 
 ---
 
-## Model 1 — Open Core (recommended starting point)
+## Licensing Roadmap
 
-**How it works:**  
-The community edition (the current CLI) stays open-source under MIT. A separate, closed-source layer adds enterprise capabilities that large organisations need but that individual developers do not.
+### Phase 1 — AGPL (Now)
 
-**Revenue lever:** Sell a licence for the closed enterprise layer.
+The current source code is licensed under **GNU Affero General Public License v3.0 or later**.
 
-**What goes in the open core vs the enterprise layer:**
+Any individual, team, or organisation may use, modify, and redistribute Zaria under AGPL. Organisations that incorporate Zaria into a networked product or service must release their modifications under AGPL, **or** obtain a commercial licence (see Phase 2).
 
-| Capability | Community (MIT) | Enterprise (Paid) |
-|---|---|---|
-| CLI audit engine (all 6 dimensions) | ✅ | ✅ |
-| JSON / Markdown / HTML / SARIF reports | ✅ | ✅ |
-| Terminal output with scoring | ✅ | ✅ |
-| SRE push adapters (Prometheus, Datadog, Grafana) | ✅ | ✅ |
-| Single-project audit | ✅ | ✅ |
-| **Multi-repo / monorepo fleet auditing** | ❌ | ✅ |
-| **SAML / SSO / LDAP authentication** | ❌ | ✅ |
-| **Role-based access control (RBAC)** | ❌ | ✅ |
-| **Centralised audit history & trend dashboard** | ❌ | ✅ |
-| **Policy-as-code enforcement (CI gate)** | ❌ | ✅ |
-| **Custom rule authoring UI** | ❌ | ✅ |
-| **Priority support SLA** | ❌ | ✅ |
-| **Audit data export (CSV, REST API)** | ❌ | ✅ |
+### Phase 2 — Enterprise Tier (next milestone)
 
-**Examples of companies using this model:**  
-GitHub (Actions runners, Codespaces, GHAS are enterprise-only), GitLab, Grafana (Grafana Cloud / enterprise plugins), Metabase, Vault.
+A separate **Enterprise Edition** will be released under a commercial licence. It will extend the AGPL community edition with capabilities that large organisations require but that individual developers typically do not need.
 
-**Pros:**
-- Core value proposition stays fully open — no bait-and-switch resentment.
-- Enterprise features naturally align with enterprise procurement (SSO, SLAs, audit logs).
-- Community contributions improve the engine that enterprise customers use, creating a virtuous cycle.
-- Low friction for individual adoption → drives word-of-mouth → eventually reaches enterprise buyers.
+Enterprises that cannot or will not comply with AGPL (e.g., because they do not wish to open-source their internal Zaria modifications) purchase an Enterprise licence instead. This is a standard **dual-licensing / open-core** model.
 
-**Cons:**
-- Requires maintaining two codebases (or a mono-repo with feature flags).
-- Enterprise features must be genuinely valuable; if the line is drawn too aggressively, you damage community trust.
-- Revenue is delayed — you need significant adoption before enterprises buy.
+### Phase 3 — Selective MIT Relicensing (future, by module)
+
+Once the Enterprise tier has generated sustainable revenue, **specific modules** of the community edition may be selectively relicensed from AGPL to MIT. This is **not** a wholesale relicensing of the entire product — it is a deliberate, module-by-module decision based on the strategic analysis in the next section.
+
+The deciding question for each module: *Does releasing this under MIT let a commercial competitor embed it in a proprietary product and capture the value without giving anything back — or does it primarily grow the ecosystem without transferring competitive advantage?*
+
+Enterprise features remain proprietary regardless of what happens to the community edition.
 
 ---
 
-## Model 2 — Dual Licensing (AGPL + Commercial)
+## Feature Tier Matrix
 
-**How it works:**  
-The entire project is released under AGPL-3.0. AGPL is copyleft: any organisation that modifies and deploys Zaria as a networked service must open-source their modifications. Organisations that do not want to comply with AGPL can buy a commercial licence that grants MIT-equivalent rights.
+This table is the canonical definition of what belongs in each tier. Features in the AGPL tier will **never be moved to a paid tier**.
 
-**Revenue lever:** Sell a commercial licence to companies that cannot (or will not) comply with AGPL.
+### AGPL Community Edition (Current)
 
-**Examples:** MongoDB (before switching to SSPL), MySQL/MariaDB, Qt, Metasploit.
-
-**Pros:**
-- The entire codebase stays in one place — no split maintenance.
-- Forces vendors (e.g., SaaS companies embedding Zaria in their own product) to either open-source or pay.
-- Philosophically aligned with open-source purists — the source is always visible.
-
-**Cons:**
-- AGPL makes many enterprise legal teams uncomfortable, even when they have no intention of modifying the code. Some companies blanket-ban AGPL dependencies.
-- Changing from MIT to AGPL retroactively requires consent from every contributor — harder the longer you wait.
-- The "pay to escape AGPL" message can feel adversarial to the community.
-- Does not fit SaaS-hosted tooling as neatly as the open-core model.
-
-**Verdict:** This model is particularly attractive in your situation. You are the sole contributor — no other authors need to grant you relicensing permission — and no licence has been applied yet, so there is no retroactive conversion to manage. Applying AGPL now, before any public release, is legally clean and straightforward. Changing from MIT to AGPL retroactively would require consent from every contributor and community goodwill; you face neither of those constraints.
-
----
-
-## Model 2b — Source-Available / Business Source Licence (BSL / BUSL)
-
-**How it works:**  
-The source code is publicly visible (so developers can read, audit, and self-host for non-commercial use), but commercial use — especially competing SaaS products — requires a paid licence. The BSL (popularised by MariaDB and adopted by HashiCorp for Terraform) typically includes an automatic conversion clause: after a set period (e.g., four years), the code converts to a fully open-source licence such as Apache 2.0.
-
-**Revenue lever:** Commercial-use licences for companies that embed or host Zaria commercially; the OSI-approved future conversion maintains long-term community goodwill.
-
-**Examples:** HashiCorp Terraform (BSL 1.1 → Apache 2.0 after four years), MariaDB MaxScale, Sentry (BSL), CockroachDB (BSL).
-
-**Pros:**
-- Source is visible — developers can inspect, audit, and self-host for development/testing without paying.
-- Prevents cloud vendors from reselling your product as a managed service without a licence agreement.
-- Simpler than dual-licensing: one public licence text governs non-commercial use.
-- The time-delayed open-source conversion signals long-term community commitment.
-- As the sole contributor, you can apply BSL today with no consent issues.
-
-**Cons:**
-- BSL/BUSL is not OSI-approved; some developers (and some organisations' procurement policies) treat it as proprietary.
-- "Source available" is often perceived negatively by the open-source community — expect some pushback.
-- HashiCorp's switch from MPL to BSL caused a community fork (OpenTofu); be aware of this precedent if you later try to shift an established user base.
-- Does not fit neatly into open-source package registries (npm may flag it).
-
-**Verdict:** An excellent choice if your main concern is preventing AWS/GCP/Azure from hosting Zaria Cloud as a managed service and undercutting you. Easier to adopt than AGPL (no "pay to escape copyleft" optics) and less aggressive than full proprietary. **Particularly compelling here because you are the sole contributor and have not yet publicised the project — adopting BSL now avoids any retroactive relicensing controversy.**
-
----
-
-## Model 3 — Managed SaaS (Zaria Cloud)
-
-**How it works:**  
-The CLI stays open-source. You run a hosted version of Zaria as a web service — `app.zaria.dev` — where teams connect their repositories, see dashboards, configure thresholds, and receive scheduled audit reports without installing anything locally.
-
-**Revenue lever:** Subscription tiers (per-seat or per-repository-count).
-
-**Example tiers:**
-
-| Tier | Price | Limits |
-|---|---|---|
-| Free | $0 | 3 repos, community support, 7-day history |
-| Pro | $29/month | 25 repos, email support, 90-day history, PDF reports |
-| Team | $99/month | Unlimited repos, Slack/Teams alerts, 1-year history |
-| Enterprise | Custom | SSO, RBAC, on-prem agent, SLA, custom retention |
-
-**Examples:** Grafana Cloud, Codecov, Snyk, SonarCloud.
-
-**Pros:**
-- No enterprise feature "split" — you monetise convenience, not capability.
-- Works with MIT licence — users can self-host for free, but most won't bother.
-- Recurring subscription revenue is highly predictable and investable.
-- Data from the SaaS platform generates insights (aggregate benchmarks, trend analysis) that you can productise.
-
-**Cons:**
-- High operational cost: you must maintain cloud infrastructure, security, GDPR compliance, uptime SLAs.
-- The CLI must be architected to push data to a backend — requires non-trivial changes to the current design (the SRE adapters in `src/sre/` are the closest existing hook).
-- "If I can self-host it for free, why pay?" requires a compelling answer — usually convenience, support, and aggregate benchmarking data.
-
----
-
-## Model 4 — Support Contracts & Professional Services
-
-**How it works:**  
-The software is free; the expertise costs money. You sell:
-- **Priority support** (guaranteed SLA, private Slack channel).
-- **Implementation services** (help an enterprise integrate Zaria into their CI/CD, tune thresholds, write custom rules).
-- **Training** (workshops for engineering teams on interpreting audit results).
-- **Retainer audits** (you audit their codebase quarterly and deliver a human-curated report).
-
-**Examples:** Red Hat (Linux support), Elastic, Confluent (early stage).
-
-**Pros:**
-- Zero product split — everything remains MIT.
-- Enterprises often have procurement requirements that mandate a support contract even when they don't use it heavily.
-- Builds deep relationships with anchor customers who shape the roadmap.
-
-**Cons:**
-- Does not scale — revenue is directly proportional to the number of people you can employ.
-- Hard to hire for: requires technical depth AND consulting skills.
-- Not suitable as a primary model for a developer tool unless combined with one of the above.
-
----
-
-## Model 5 — GitHub Sponsors / Open Collective (Community Funding)
-
-**How it works:**  
-Individual developers, companies, and foundations sponsor the project financially via GitHub Sponsors or Open Collective in exchange for recognition, early access, or governance influence.
-
-**Examples:** curl, ESLint, Vue.js (Open Collective), Babel.
-
-**Pros:**
-- Zero friction — no enterprise sales cycle, no pricing page.
-- GitHub Sponsors integrates directly into the repo.
-- Builds goodwill and signals health to potential enterprise buyers.
-
-**Cons:**
-- Revenue ceiling is low ($5k–$50k/year for most projects, with rare exceptions).
-- Not a substitute for a commercial model — use as a supplement.
-- Requires maintaining a public roadmap and sponsor-tier perks that take time to manage.
-
----
-
-## Recommendation
-
-For Zaria at its current stage — **no licence applied, sole contributor, not yet publicised** — you are in the best possible position to make a strategic licence decision. Every option in this document is fully available to you without any legal complexity or community backlash risk. Once you publish the code under a licence and acquire contributors or a user base, many of these options close or become far harder to exercise.
-
-### Choosing Your Starting Licence
-
-Use this decision tree before any public release:
-
-| Goal | Recommended licence |
+| Feature | Notes |
 |---|---|
-| Maximum commercial control, direct enterprise sales | **Proprietary** (Model 0) |
-| Community-driven adoption + prevent cloud competitors | **AGPL + Commercial dual licence** (Model 2) |
-| Visible source, prevent commercial hosting, future OSS | **BSL / BUSL** (Model 2b) |
-| Broadest developer adoption, SaaS revenue later | **MIT + Managed SaaS** (Model 1 + 3 staged) |
-| Quick, simple OSS presence + community funding | **MIT + Sponsors** (Model 1 + 5) |
+| **Core audit engine (all 6 dimensions)** | PERF, ARCH, SCALE, INT, MAINT, EFF — all 24 rules |
+| **Performance audit** (PERF001–PERF004) | N+1 queries, sync blocking, memory leaks, bundle size |
+| **Architecture audit** (ARCH001–ARCH004) | Circular deps, coupling, clean arch evaluation |
+| **Scalability & Observability audit** (SCALE001–SCALE004) | Stateful patterns, tracing, health checks, unbounded queries |
+| **Data Integrity & Race Conditions audit** (INT001–INT004) | Shared-state mutations, transactions, TOCTOU, idempotency |
+| **Long-Term Maintenance audit** (MAINT001–MAINT005) | Complexity, duplication, CVEs, deprecated deps, docs coverage |
+| **Code Efficiency audit** (EFF001–EFF003) | Efficiency-focused static rules |
+| **Terminal report** | ANSI-coloured, progress bars, A–F grade |
+| **JSON report** | Machine-readable structured output |
+| **Markdown report** | GitHub / GitLab PR comment format |
+| **HTML report** | Self-contained, offline-capable |
+| **SARIF report** | GitHub Code Scanning, Azure DevOps, VS Code |
+| **Single-project audit** | Audit one repository per invocation |
+| **Zero-config usage** | Works out of the box with sensible defaults |
+| **YAML / JSON config** (`.zariarc`) | Per-project thresholds, ignore rules, dimension control |
+| **CI/CD exit codes & quality gates** | `--threshold` flag; non-zero exit on breach |
+| **Community plugin system** | `plugin add / remove / list`; typed plugin interface |
+| **`--only` / `--skip` dimension flags** | Selective audit runs |
 
-### Staged Path (if choosing an open tier)
+### Enterprise Edition (Commercial Licence — Permanent)
 
-#### Stage 1 — Before first public release (Now)
-- **Choose and apply your licence before pushing code publicly.** This is the single most important action. Once code is public without a licence, users will assume they can use it; once it is public under MIT, you cannot add restrictions without community backlash.
-- If commercialisation is a priority, consider **AGPL + commercial dual licence** or **BSL** rather than MIT. Both are far easier to adopt today than after the project has contributors and users.
-- Add a GitHub Sponsors page (works with any licence) to signal sustainability from day one.
-- Begin designing fleet-auditing and dashboard features as enterprise candidates — do not release them yet.
-
-#### Stage 2 — First revenue (~500 active users)
-- Introduce **Zaria Cloud** as a hosted SaaS with a free tier.
-- The free tier generates adoption data and word-of-mouth; paid tiers (Pro/Team) convert active users.
-- This requires minimal product changes — the SRE push adapters in `src/sre/` are the architectural hook.
-
-#### Stage 3 — Enterprise sales (~2,000 active users, or first inbound enterprise enquiry)
-- Introduce the **Enterprise** tier: SSO, RBAC, on-prem agent, fleet auditing, custom rules UI, SLA.
-- This is the open-core model applied to the SaaS: Community Cloud (limited) + Enterprise Cloud (paid) + on-prem (Enterprise licence).
-- Begin offering **support contracts** to the first enterprise customers to fund early growth.
-
-### Licence Strategy Summary
-
-- **If you choose MIT:** Keep MIT for the CLI. Use a separate proprietary licence for any enterprise server layer (the SaaS backend and on-prem agent are not part of the open-source repo). This is exactly what GitHub, GitLab, and Grafana do.
-- **If you choose AGPL:** Apply it now while you are the sole contributor — no consent from others needed, no retroactive controversy. Sell commercial licences to companies that cannot comply with AGPL. This is the simplest form of dual licensing and the cleanest it will ever be.
-- **If you choose BSL:** Apply it now for the same reason. Configure the commercial-use exclusions and the conversion date (e.g., four years from release → Apache 2.0). This is the lowest-friction way to prevent SaaS competitors.
-- **Proprietary is not a trap.** Starting proprietary does not prevent you from open-sourcing later (many companies do this). Open-sourcing under MIT does prevent you from going proprietary later (without breaking community trust irreparably).
-
----
-
-## Competitive Reference Points
-
-| Company | Open-source | Enterprise/SaaS | Revenue model |
-|---|---|---|---|
-| **GitHub** | Open-source ecosystem tools | GitHub Enterprise, Actions runners, Copilot, GHAS | SaaS + seat licence |
-| **GitLab** | GitLab CE (MIT) | GitLab EE + GitLab.com | Open core + SaaS |
-| **Grafana** | Grafana OSS (AGPL) | Grafana Cloud, Enterprise plugins | SaaS + plugin licences |
-| **Snyk** | CLI open-source | Snyk platform (SaaS) | SaaS freemium |
-| **SonarQube** | Community edition | Enterprise/Developer editions | Open core |
-| **HashiCorp (Terraform)** | Terraform OSS (BSL → Apache) | Terraform Cloud/Enterprise | SaaS + BSL licence |
-| **Sentry** | Self-hosted (BSL) | Sentry Cloud (SaaS) | BSL + SaaS freemium |
-| **CockroachDB** | CockroachDB Core (BSL) | CockroachDB Dedicated/Serverless | BSL + SaaS |
-| **MongoDB** | Community (SSPL) | Atlas (SaaS) | SSPL + SaaS |
-| **JetBrains** | Some tools MIT/Apache | Paid IDEs, Toolbox | Proprietary |
+| Feature | Notes |
+|---|---|
+| **Multi-repo / monorepo fleet auditing** | Audit dozens of repos in one run; aggregate scoring and trend comparison across the fleet |
+| **Centralised audit history & trend dashboard** | Persistent storage of audit runs; visualise score trends over time; regression alerts |
+| **Policy-as-code enforcement** | Organisation-wide quality gates defined in a central policy repo; enforced across all teams' CI pipelines |
+| **SAML / SSO / LDAP authentication** | Required for enterprise procurement; integrates with Okta, Azure AD, Google Workspace |
+| **Role-based access control (RBAC)** | Team leads see all repos; developers see their own; compliance officers get read-only dashboard access |
+| **Custom rule authoring UI** | Browser-based wizard for writing and testing organisation-specific audit rules without touching code |
+| **Audit data export** (CSV, REST API) | Pipe findings into JIRA, ServiceNow, Splunk, or any internal compliance system |
+| **PDF compliance reports** | Formal, printable reports for auditors, board packs, and compliance submissions |
+| **SRE adapter connectivity** (Prometheus, Datadog, Grafana) | Connect Zaria to live observability stacks; read runtime metrics and enrich audit findings with live production signal |
+| **Advanced SRE correlation engine** | Maps static findings to runtime error rates, MTTR, and incident frequency; surfaces "high-code-risk + high-production-impact" critical findings |
+| **On-premises agent** | Run Zaria behind a firewall with no outbound internet access; results pushed to self-hosted or Zaria-hosted dashboard |
+| **Priority support SLA** | Guaranteed response times; private Slack channel; dedicated engineering contact |
+| **Zaria Cloud** (hosted SaaS) | Connect repositories via GitHub / GitLab / Bitbucket app; scheduled audits; team dashboards; no CLI required |
 
 ---
 
-## Key Principles to Preserve Community Trust (if you choose an open-source route)
+## SRE Integration Tier Decision
 
-1. **Decide your licence before your first public commit.** It is vastly easier to move from restrictive (AGPL, BSL) to permissive (MIT) than the reverse. Once users, contributors, and integrations exist, any licence tightening is seen as a betrayal.
-2. **Never remove open-source features.** Once something is in the open release, it stays there. Regressions in openness destroy community trust irreparably.
-3. **Document the open/enterprise boundary clearly.** Publish a features comparison table (like the one in Model 1 above) so there are no surprises.
-4. **Enterprise features should be genuinely enterprise.** SSO, RBAC, fleet management, and SLAs are things individual developers don't need. Locking core functionality behind a paywall is what poisons communities.
-5. **Respond publicly to the community.** Issues, PRs, and roadmap discussions in the open build the trust that drives adoption, which drives enterprise leads.
-6. **Move fast on open bugs, slower on enterprise features.** This signals that open-source is not a marketing tool.
+The SRE adapters (`src/sre/` — Prometheus, Datadog, Grafana connectivity) were initially placed in the AGPL community edition as a read-only, opt-in feature. After further consideration, they have been repositioned to the **Enterprise tier**. This section documents the trade-off analysis behind that decision.
+
+### The Case for Keeping SRE in AGPL
+
+- **Drives adoption among SRE practitioners.** Allowing any team to connect Zaria to Prometheus or Grafana for free would put Zaria in front of the exact engineering culture that appreciates open-source tooling and becomes evangelists.
+- **The basic HTTP adapters are not complex.** Anyone could independently implement a Prometheus scrape or a Grafana query; the AGPL protection on that code provides limited value.
+- **AGPL copyleft still protects against proprietary forks.** Even under AGPL, a company that ships a modified version as a service must open-source it. The basic SRE plumbing is not a huge competitive loss.
+
+### The Case for Moving SRE to Enterprise (the chosen position)
+
+1. **SRE tooling is structurally an enterprise context.** Production observability stacks — Prometheus, Datadog, Grafana, New Relic — are operated by organisations with engineering teams, infrastructure budgets, and uptime requirements. Individual developers and small teams audit code without a live Prometheus endpoint. Placing SRE connectivity in the community edition is giving away a feature whose primary users are enterprise buyers.
+
+2. **SRE integration is Zaria's primary differentiator over pure-static-analysis tools.** The unique value proposition of Zaria is the ability to correlate static code quality scores with runtime production health. This is the feature that makes the product genuinely compelling in a sales conversation. Keeping it entirely in the Enterprise tier ensures the entire SRE story — from basic connectivity to advanced correlation — remains a commercial selling point rather than a free baseline.
+
+3. **Splitting SRE into "basic AGPL" and "advanced Enterprise" weakens the enterprise pitch.** If a team can already read Prometheus metrics for free, the incremental jump to pay for the "advanced correlation engine" is a much harder sell. A clean "all SRE is enterprise" boundary makes the value of the enterprise tier unambiguous.
+
+4. **SRE adapter credentials and endpoint configuration are enterprise security concerns.** Organisations passing Datadog API keys or Prometheus endpoints through a tool expect enterprise-grade credential management, audit logs, and support SLAs — not community-tier error handling. Shipping half-finished credential flows in the community edition creates a support burden and a reputation risk.
+
+5. **No community expectation has been set.** The SRE feature was listed in the community tier during internal planning only — it has not been shipped, marketed, or promised to any community audience. Repositioning it to Enterprise before public launch carries zero trust cost.
+
+### Decision
+
+**All SRE integration is Enterprise-only.** Both the basic adapter connectivity (Prometheus, Datadog, Grafana `sre connect`) and the advanced correlation engine are commercial features. This boundary is permanent.
+
+The community edition retains full audit capability across all six static-analysis dimensions. The SRE tier is the commercial upsell for organisations that want runtime enrichment.
 
 ---
 
-_Last updated: March 2026. Revised to reflect actual project state: no licence applied, sole contributor, not yet publicised._
+## Audit Intelligence Tier Decision
+
+The audit detection rules (`src/audit/*/rules/` — all 24 rules across PERF, ARCH, SCALE, INT, MAINT, EFF) and the dimension scorers (`src/audit/*/scorer.ts`) are currently placed in the **AGPL community edition** as the core capability of Zaria. This section records the explicit analysis behind that decision.
+
+### The Case for Moving Audit Intelligence to Enterprise
+
+- **The detection rules are Zaria's hardest-to-replicate asset.** The 24 rules encode accumulated knowledge of real-world code quality patterns, AST traversal strategies, and heuristics. Locking them in a commercial tier is the most aggressive form of protection.
+- **Competitors cannot freely copy a proprietary rule set.** Under AGPL, contributors who improve a rule and deploy it as a service must open-source it — but a community fork could still study and reimplement the logic. Proprietary closure removes that possibility entirely.
+- **Enterprise buyers pay for the rules more than anything else.** The detection engine is what makes the audit findings trustworthy and actionable; it is the primary reason an enterprise procurement team would justify the cost.
+
+### The Case for Keeping Audit Intelligence in AGPL (the chosen position)
+
+1. **Without detection rules, the community edition has no value whatsoever.** If the open-source package contains only a CLI skeleton, configuration parser, and reporters — but produces zero findings — no developer will install it, no community will form around it, and no enterprise sales funnel exists. The community edition must be genuinely useful on its own; otherwise the open-core model collapses into vaporware.
+
+2. **AGPL is already strong protection for the rule logic.** The network-copyleft clause ensures that any organisation that improves the detection rules and deploys a modified Zaria as a service must publish those improvements under AGPL. This covers the primary threat scenario (a cloud vendor forking Zaria into a competing SaaS). Proprietary closure adds only marginal additional protection while destroying community adoption.
+
+3. **The open-core model that works always opens the engine.** Grafana (AGPL), SonarQube (LGPL), Semgrep (LGPL), ESLint (MIT) — every successful open-core static-analysis or observability tool makes its detection engine freely available. Enterprise upsells are built on orchestration, scale, compliance, and auth — never on gating the core capability. Moving the rules to Enterprise would put Zaria in a category with no successful precedent in the developer tooling market.
+
+4. **Community engagement sharpens the detection rules.** The AGPL community around the audit engine is the primary mechanism by which detection logic improves over time. Bug reports, edge-case discoveries, and community-contributed improvements make the rules better. A proprietary rule set is maintained only by internal engineering capacity; an AGPL rule set benefits from thousands of real-world users encountering real-world codebases.
+
+5. **Adoption loss at the community tier is permanent.** If Zaria launches with proprietary rules, developers will evaluate the open edition, find it produces no findings, and move on. Reputation in the developer-tools market is set within the first months of a product's availability; it is almost impossible to recover from an initial perception of "not actually open source." The cost of getting this wrong is irreversible.
+
+### Decision
+
+**Audit intelligence stays in AGPL permanently.** All 24 detection rules and all dimension scorers are, and will remain, open-source features available to every user under the AGPL licence.
+
+The AGPL community edition is a fully capable static-analysis tool. The Enterprise tier provides the operational layer — fleet management, runtime correlation, compliance tooling, and authentication — that organisations need once the tool is embedded in their engineering culture. That sequence (open capability → enterprise adoption → enterprise tier) is the only sequence that works.
+
+---
+
+## Selective MIT Candidate Analysis
+
+Not all AGPL features are equal candidates for eventual MIT relicensing. The test for each feature is: **does releasing it under MIT primarily grow the ecosystem, or does it primarily hand competitive advantage to commercial actors who would not give improvements back?**
+
+Features are classified below into three categories:
+
+### ✅ MIT Candidates — Infrastructure / Plumbing Layer
+
+These modules have low standalone commercial value. They are the plumbing that makes the audit engine run, not the intelligence inside it. Releasing them under MIT helps IDE extension authors, CI system integrators, and framework maintainers build on Zaria's foundations without being forced to open-source their own tools — and without giving away anything an embeder could exploit commercially on its own.
+
+| Module / Feature | Location | Rationale for MIT candidacy |
+|---|---|---|
+| **AST parser** | `src/audit/parser.ts` | Infrastructure: wraps ts-morph; no audit logic; useless without rules |
+| **File traversal engine** | `src/audit/traversal.ts` | Infrastructure: discovers files; no detection value alone |
+| **Analysis context builder** | `src/audit/context.ts` | Infrastructure: assembles shared state; no findings produced |
+| **Type definitions & interfaces** | `src/audit/types.ts` | Interface contracts; no logic; needed to build compatible plugins |
+| **CLI skeleton** (command routing, argument parsing) | `src/cli/index.ts`, `src/cli/commands/*.ts` | Scaffolding; the value is in what the commands invoke, not the routing |
+| **Configuration schema & loader** | `src/config/` | Standardised config format; helpful for plugin/tooling authors |
+| **Scoring aggregation maths** | `src/scorer/aggregate.ts` | The weighted A–F calculation is a simple algorithm, not a competitive asset |
+| **Terminal reporter** | `src/report/terminal.ts` | Text-to-console formatting; no competitive value without the rules driving it |
+| **JSON reporter** | `src/report/json.ts` | Serialises findings to JSON; trivial without the detection logic |
+
+**Condition:** These are MIT candidates only as a group — the plumbing is not useful without the rules, so releasing it under MIT does not transfer audit capability to a competitor. They would be relicensed together once the Enterprise tier is established and there is no risk of the infrastructure alone becoming the basis of a commercial fork.
+
+### ❌ Stays AGPL — Audit Intelligence Layer
+
+These are the modules that **are** Zaria. They represent the accumulated detection logic: the patterns, heuristics, and AST traversal strategies that identify real problems in real codebases. This is the intellectual core of the product.
+
+Releasing these under MIT would allow any company — including cloud vendors and competitors — to embed, improve, and ship this detection logic in proprietary products without contributing improvements back. AGPL ensures that if someone makes a detection rule better and deploys it as a service, that improvement returns to the community. That protection is the primary reason AGPL was chosen, and it applies most forcefully here.
+
+| Module / Feature | Location | Rationale for staying AGPL |
+|---|---|---|
+| **Performance rules** (PERF001–PERF004) | `src/audit/performance/rules/` | Core detection intelligence; high reuse value for commercial actors |
+| **Architecture rules** (ARCH001–ARCH004) | `src/audit/architecture/rules/` | Core detection intelligence |
+| **Scalability rules** (SCALE001–SCALE004) | `src/audit/scalability/rules/` | Core detection intelligence |
+| **Integrity rules** (INT001–INT004) | `src/audit/integrity/rules/` | Core detection intelligence; security-adjacent value |
+| **Maintenance rules** (MAINT001–MAINT005) | `src/audit/maintenance/rules/` | Core detection intelligence |
+| **Efficiency rules** (EFF001–EFF003) | `src/audit/efficiency/rules/` | Core detection intelligence |
+| **Dimension scorers** | `src/audit/*/scorer.ts` | Aggregation logic specific to each dimension's weighting strategy |
+| **HTML reporter** | `src/report/html.ts` | Polished stakeholder output; part of Zaria's product presentation, not generic infrastructure |
+| **Markdown reporter** | `src/report/markdown.ts` | CI/CD PR integration; a product feature, not a utility |
+| **SARIF reporter** | `src/report/sarif.ts` | Enterprise CI/CD toolchain integration; valuable enough to protect |
+| **Community plugin system** | `src/cli/commands/plugin.ts` | Plugin loader architecture; keeping it AGPL ensures plugin improvements flow back |
+
+### 🔒 Enterprise — Permanent Commercial Tier
+
+All features in the Enterprise Edition remain under a commercial licence permanently, regardless of any future changes to the community edition's licence. These features will never move to AGPL or MIT.
+
+---
+
+## Summary: What Would and Would Not Move to MIT
+
+| Category | MIT future? | Features |
+|---|---|---|
+| **Infrastructure / plumbing** | ✅ Yes (as a group, when conditions are met) | Parser, traversal, context builder, types, CLI skeleton, config, scorer maths, terminal/JSON reporters |
+| **Audit intelligence** | ❌ No — stays AGPL | All 24 detection rules, dimension scorers, HTML/Markdown/SARIF reporters, plugin system |
+| **Enterprise tier** | ❌ No — stays commercial | All SRE integrations (basic adapter connectivity + advanced correlation engine), fleet auditing, SSO, RBAC, dashboards, policy-as-code, PDF reports, REST API, on-prem agent, Zaria Cloud |
+
+---
+
+## The Dual-Licensing Mechanism
+
+Zaria operates under a **dual-licence model**:
+
+- **AGPL-3.0-or-later** — for individuals, teams, and organisations that are willing to comply with AGPL's terms (i.e., they release their modifications to Zaria under AGPL when deploying it as a networked service).
+- **Zaria Enterprise Licence** — for organisations that need to embed or deploy Zaria without AGPL obligations, or that need the enterprise features listed above.
+
+To obtain an Enterprise licence, contact: **enterprise@zaria.dev**
+
+---
+
+## What AGPL Requires (Plain-English Summary)
+
+You **can** freely:
+- Use Zaria to audit your own codebases (internal or commercial projects).
+- Modify Zaria for your own use.
+- Self-host Zaria internally.
+- Redistribute Zaria or your modified version under AGPL.
+
+You **must**, if you distribute or network-deploy a modified version:
+- Make the modified source code available under AGPL.
+- Include a prominent notice that the software has been modified.
+- Preserve all copyright and licence notices.
+
+You **must** purchase a commercial licence if:
+- You want to embed Zaria in a product or service and **not** open-source your modifications.
+- You want the Enterprise features listed above.
+
+---
+
+## Community Commitments
+
+1. **The AGPL feature set is frozen against paywall regressions.** Features listed in the "AGPL Community Edition" table above will never be moved behind the enterprise tier. This is a permanent, public commitment. *(Note: SRE integrations were repositioned to Enterprise during pre-launch internal planning, before any public release or community adoption. The current AGPL table reflects the definitive community feature set.)*
+2. **Selective MIT relicensing is additive, not reductive.** If a module is moved from AGPL to MIT, no functionality is removed — the change only relaxes the licence on that module. Nothing already open will be closed.
+3. **The enterprise/community boundary is documented here.** Any change to this table will be announced publicly with at least 90 days' notice.
+4. **Enterprise features are genuinely enterprise.** SSO, RBAC, fleet management, SRE integrations, and SLAs are things individual developers do not need. Core static-analysis audit capability stays in the open.
+
+---
+
+## Competitive Context
+
+| Project | Community Licence | Enterprise/SaaS Model |
+|---|---|---|
+| **Grafana** | AGPL-3.0 | Grafana Cloud + Enterprise plugins (proprietary) |
+| **GitLab** | MIT (CE) | GitLab EE (proprietary) + GitLab.com SaaS |
+| **SonarQube** | LGPL-3.0 (Community) | Developer / Enterprise / Datacenter editions |
+| **Metasploit** | BSD-3 (Framework) | Metasploit Pro (proprietary) |
+| **HashiCorp Vault** | BSL 1.1 | HCP Vault (SaaS) + Enterprise |
+| **Sentry** | BSL | Sentry Cloud (SaaS) |
+| **Zaria** | **AGPL-3.0-or-later** | **Zaria Enterprise + Zaria Cloud (planned)** |
+
+Grafana is the closest structural parallel: AGPL community edition, proprietary enterprise plugins, hosted SaaS. That model has generated hundreds of millions in revenue while maintaining one of the strongest open-source communities in the observability space.
+
+---
+
+_Last updated: March 2026. AGPL-3.0-or-later applied. Selective MIT candidate analysis added. SRE integrations repositioned to Enterprise tier (see SRE Tier Decision section). Audit intelligence confirmed as AGPL-permanent (see Audit Intelligence Tier Decision section). Enterprise tier and Zaria Cloud in planning._

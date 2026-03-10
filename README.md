@@ -40,7 +40,7 @@ Zaria analyses static code, project structure, dependency graphs, and configurat
 - **CI/CD ready** — non-zero exit codes on threshold breaches, configurable quality gates.
 - **Language support** — initial support for JavaScript, TypeScript, Python, and Go web application codebases; expanding to mobile and desktop.
 - **Plugin architecture** — extend Zaria with custom audit rules for your organisation's standards.
-- **Enterprise features** — role-based access for shared dashboards, audit history, and compliance report exports.
+- **Enterprise Edition** — fleet auditing, SAML/SSO, RBAC, centralised audit history, policy-as-code, PDF reports, and Zaria Cloud. See [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md).
 
 ---
 
@@ -385,4 +385,12 @@ Contributions are welcome! Please read `CONTRIBUTING.md` (coming soon) for guide
 
 ---
 
-## © 2026 All rights reserved
+## License
+
+Zaria is licensed under the **GNU Affero General Public License v3.0 or later** (AGPL-3.0-or-later).  
+See [LICENSE](./LICENSE) for the full licence text.
+
+A **commercial licence** is available for organisations that need to deploy Zaria without AGPL obligations or that require Enterprise Edition features (fleet auditing, SSO/SAML, RBAC, centralised dashboards, policy-as-code, and more).  
+See [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md) and [docs/open-source-strategy.md](./docs/open-source-strategy.md) for details, or contact **enterprise@zaria.dev**.
+
+Copyright © 2026 Zoe-life.
