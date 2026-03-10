@@ -117,6 +117,36 @@ The community edition retains full audit capability across all six static-analys
 
 ---
 
+## Audit Intelligence Tier Decision
+
+The audit detection rules (`src/audit/*/rules/` — all 24 rules across PERF, ARCH, SCALE, INT, MAINT, EFF) and the dimension scorers (`src/audit/*/scorer.ts`) are currently placed in the **AGPL community edition** as the core capability of Zaria. This section records the explicit analysis behind that decision.
+
+### The Case for Moving Audit Intelligence to Enterprise
+
+- **The detection rules are Zaria's hardest-to-replicate asset.** The 24 rules encode accumulated knowledge of real-world code quality patterns, AST traversal strategies, and heuristics. Locking them in a commercial tier is the most aggressive form of protection.
+- **Competitors cannot freely copy a proprietary rule set.** Under AGPL, contributors who improve a rule and deploy it as a service must open-source it — but a community fork could still study and reimplement the logic. Proprietary closure removes that possibility entirely.
+- **Enterprise buyers pay for the rules more than anything else.** The detection engine is what makes the audit findings trustworthy and actionable; it is the primary reason an enterprise procurement team would justify the cost.
+
+### The Case for Keeping Audit Intelligence in AGPL (the chosen position)
+
+1. **Without detection rules, the community edition has no value whatsoever.** If the open-source package contains only a CLI skeleton, configuration parser, and reporters — but produces zero findings — no developer will install it, no community will form around it, and no enterprise sales funnel exists. The community edition must be genuinely useful on its own; otherwise the open-core model collapses into vaporware.
+
+2. **AGPL is already strong protection for the rule logic.** The network-copyleft clause ensures that any organisation that improves the detection rules and deploys a modified Zaria as a service must publish those improvements under AGPL. This covers the primary threat scenario (a cloud vendor forking Zaria into a competing SaaS). Proprietary closure adds only marginal additional protection while destroying community adoption.
+
+3. **The open-core model that works always opens the engine.** Grafana (AGPL), SonarQube (LGPL), Semgrep (LGPL), ESLint (MIT) — every successful open-core static-analysis or observability tool makes its detection engine freely available. Enterprise upsells are built on orchestration, scale, compliance, and auth — never on gating the core capability. Moving the rules to Enterprise would put Zaria in a category with no successful precedent in the developer tooling market.
+
+4. **Community engagement sharpens the detection rules.** The AGPL community around the audit engine is the primary mechanism by which detection logic improves over time. Bug reports, edge-case discoveries, and community-contributed improvements make the rules better. A proprietary rule set is maintained only by internal engineering capacity; an AGPL rule set benefits from thousands of real-world users encountering real-world codebases.
+
+5. **Adoption loss at the community tier is permanent.** If Zaria launches with proprietary rules, developers will evaluate the open edition, find it produces no findings, and move on. Reputation in the developer-tools market is set within the first months of a product's availability; it is almost impossible to recover from an initial perception of "not actually open source." The cost of getting this wrong is irreversible.
+
+### Decision
+
+**Audit intelligence stays in AGPL permanently.** All 24 detection rules and all dimension scorers are, and will remain, open-source features available to every user under the AGPL licence.
+
+The AGPL community edition is a fully capable static-analysis tool. The Enterprise tier provides the operational layer — fleet management, runtime correlation, compliance tooling, and authentication — that organisations need once the tool is embedded in their engineering culture. That sequence (open capability → enterprise adoption → enterprise tier) is the only sequence that works.
+
+---
+
 ## Selective MIT Candidate Analysis
 
 Not all AGPL features are equal candidates for eventual MIT relicensing. The test for each feature is: **does releasing it under MIT primarily grow the ecosystem, or does it primarily hand competitive advantage to commercial actors who would not give improvements back?**
@@ -232,4 +262,4 @@ Grafana is the closest structural parallel: AGPL community edition, proprietary 
 
 ---
 
-_Last updated: March 2026. AGPL-3.0-or-later applied. Selective MIT candidate analysis added. SRE integrations repositioned to Enterprise tier (see SRE Tier Decision section). Enterprise tier and Zaria Cloud in planning._
+_Last updated: March 2026. AGPL-3.0-or-later applied. Selective MIT candidate analysis added. SRE integrations repositioned to Enterprise tier (see SRE Tier Decision section). Audit intelligence confirmed as AGPL-permanent (see Audit Intelligence Tier Decision section). Enterprise tier and Zaria Cloud in planning._
