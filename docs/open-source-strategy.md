@@ -64,7 +64,6 @@ This table is the canonical definition of what belongs in each tier. Features in
 | **Zero-config usage** | Works out of the box with sensible defaults |
 | **YAML / JSON config** (`.zariarc`) | Per-project thresholds, ignore rules, dimension control |
 | **CI/CD exit codes & quality gates** | `--threshold` flag; non-zero exit on breach |
-| **SRE integrations** (Prometheus, Datadog, Grafana) | Read-only, opt-in, configures via `sre connect` |
 | **Community plugin system** | `plugin add / remove / list`; typed plugin interface |
 | **`--only` / `--skip` dimension flags** | Selective audit runs |
 
@@ -80,10 +79,41 @@ This table is the canonical definition of what belongs in each tier. Features in
 | **Custom rule authoring UI** | Browser-based wizard for writing and testing organisation-specific audit rules without touching code |
 | **Audit data export** (CSV, REST API) | Pipe findings into JIRA, ServiceNow, Splunk, or any internal compliance system |
 | **PDF compliance reports** | Formal, printable reports for auditors, board packs, and compliance submissions |
+| **SRE adapter connectivity** (Prometheus, Datadog, Grafana) | Connect Zaria to live observability stacks; read runtime metrics and enrich audit findings with live production signal |
 | **Advanced SRE correlation engine** | Maps static findings to runtime error rates, MTTR, and incident frequency; surfaces "high-code-risk + high-production-impact" critical findings |
 | **On-premises agent** | Run Zaria behind a firewall with no outbound internet access; results pushed to self-hosted or Zaria-hosted dashboard |
 | **Priority support SLA** | Guaranteed response times; private Slack channel; dedicated engineering contact |
 | **Zaria Cloud** (hosted SaaS) | Connect repositories via GitHub / GitLab / Bitbucket app; scheduled audits; team dashboards; no CLI required |
+
+---
+
+## SRE Integration Tier Decision
+
+The SRE adapters (`src/sre/` — Prometheus, Datadog, Grafana connectivity) were initially placed in the AGPL community edition as a read-only, opt-in feature. After further consideration, they have been repositioned to the **Enterprise tier**. This section documents the trade-off analysis behind that decision.
+
+### The Case for Keeping SRE in AGPL
+
+- **Drives adoption among SRE practitioners.** Allowing any team to connect Zaria to Prometheus or Grafana for free would put Zaria in front of the exact engineering culture that appreciates open-source tooling and becomes evangelists.
+- **The basic HTTP adapters are not complex.** Anyone could independently implement a Prometheus scrape or a Grafana query; the AGPL protection on that code provides limited value.
+- **AGPL copyleft still protects against proprietary forks.** Even under AGPL, a company that ships a modified version as a service must open-source it. The basic SRE plumbing is not a huge competitive loss.
+
+### The Case for Moving SRE to Enterprise (the chosen position)
+
+1. **SRE tooling is structurally an enterprise context.** Production observability stacks — Prometheus, Datadog, Grafana, New Relic — are operated by organisations with engineering teams, infrastructure budgets, and uptime requirements. Individual developers and small teams audit code without a live Prometheus endpoint. Placing SRE connectivity in the community edition is giving away a feature whose primary users are enterprise buyers.
+
+2. **SRE integration is Zaria's primary differentiator over pure-static-analysis tools.** The unique value proposition of Zaria is the ability to correlate static code quality scores with runtime production health. This is the feature that makes the product genuinely compelling in a sales conversation. Keeping it entirely in the Enterprise tier ensures the entire SRE story — from basic connectivity to advanced correlation — remains a commercial selling point rather than a free baseline.
+
+3. **Splitting SRE into "basic AGPL" and "advanced Enterprise" weakens the enterprise pitch.** If a team can already read Prometheus metrics for free, the incremental jump to pay for the "advanced correlation engine" is a much harder sell. A clean "all SRE is enterprise" boundary makes the value of the enterprise tier unambiguous.
+
+4. **SRE adapter credentials and endpoint configuration are enterprise security concerns.** Organisations passing Datadog API keys or Prometheus endpoints through a tool expect enterprise-grade credential management, audit logs, and support SLAs — not community-tier error handling. Shipping half-finished credential flows in the community edition creates a support burden and a reputation risk.
+
+5. **No community expectation has been set.** The SRE feature was listed in the community tier during internal planning only — it has not been shipped, marketed, or promised to any community audience. Repositioning it to Enterprise before public launch carries zero trust cost.
+
+### Decision
+
+**All SRE integration is Enterprise-only.** Both the basic adapter connectivity (Prometheus, Datadog, Grafana `sre connect`) and the advanced correlation engine are commercial features. This boundary is permanent.
+
+The community edition retains full audit capability across all six static-analysis dimensions. The SRE tier is the commercial upsell for organisations that want runtime enrichment.
 
 ---
 
@@ -126,7 +156,6 @@ Releasing these under MIT would allow any company — including cloud vendors an
 | **Maintenance rules** (MAINT001–MAINT005) | `src/audit/maintenance/rules/` | Core detection intelligence |
 | **Efficiency rules** (EFF001–EFF003) | `src/audit/efficiency/rules/` | Core detection intelligence |
 | **Dimension scorers** | `src/audit/*/scorer.ts` | Aggregation logic specific to each dimension's weighting strategy |
-| **SRE integrations** (Prometheus, Datadog, Grafana) | `src/sre/` | Runtime-data enrichment is a key product differentiator; adapters encode proprietary API knowledge |
 | **HTML reporter** | `src/report/html.ts` | Polished stakeholder output; part of Zaria's product presentation, not generic infrastructure |
 | **Markdown reporter** | `src/report/markdown.ts` | CI/CD PR integration; a product feature, not a utility |
 | **SARIF reporter** | `src/report/sarif.ts` | Enterprise CI/CD toolchain integration; valuable enough to protect |
@@ -143,8 +172,8 @@ All features in the Enterprise Edition remain under a commercial licence permane
 | Category | MIT future? | Features |
 |---|---|---|
 | **Infrastructure / plumbing** | ✅ Yes (as a group, when conditions are met) | Parser, traversal, context builder, types, CLI skeleton, config, scorer maths, terminal/JSON reporters |
-| **Audit intelligence** | ❌ No — stays AGPL | All 24 detection rules, dimension scorers, SRE adapters, HTML/Markdown/SARIF reporters, plugin system |
-| **Enterprise tier** | ❌ No — stays commercial | Fleet auditing, SSO, RBAC, dashboards, policy-as-code, PDF reports, REST API, on-prem agent, Zaria Cloud |
+| **Audit intelligence** | ❌ No — stays AGPL | All 24 detection rules, dimension scorers, HTML/Markdown/SARIF reporters, plugin system |
+| **Enterprise tier** | ❌ No — stays commercial | All SRE integrations (basic adapter connectivity + advanced correlation engine), fleet auditing, SSO, RBAC, dashboards, policy-as-code, PDF reports, REST API, on-prem agent, Zaria Cloud |
 
 ---
 
@@ -180,10 +209,10 @@ You **must** purchase a commercial licence if:
 
 ## Community Commitments
 
-1. **The AGPL feature set is frozen against paywall regressions.** Features listed in the "AGPL Community Edition" table above will never be moved behind the enterprise tier. This is a permanent, public commitment.
+1. **The AGPL feature set is frozen against paywall regressions.** Features listed in the "AGPL Community Edition" table above will never be moved behind the enterprise tier. This is a permanent, public commitment. *(Note: SRE integrations were repositioned to Enterprise during pre-launch internal planning, before any public release or community adoption. The current AGPL table reflects the definitive community feature set.)*
 2. **Selective MIT relicensing is additive, not reductive.** If a module is moved from AGPL to MIT, no functionality is removed — the change only relaxes the licence on that module. Nothing already open will be closed.
 3. **The enterprise/community boundary is documented here.** Any change to this table will be announced publicly with at least 90 days' notice.
-4. **Enterprise features are genuinely enterprise.** SSO, RBAC, fleet management, and SLAs are things individual developers do not need. Core audit capability stays in the open.
+4. **Enterprise features are genuinely enterprise.** SSO, RBAC, fleet management, SRE integrations, and SLAs are things individual developers do not need. Core static-analysis audit capability stays in the open.
 
 ---
 
@@ -203,4 +232,4 @@ Grafana is the closest structural parallel: AGPL community edition, proprietary 
 
 ---
 
-_Last updated: March 2026. AGPL-3.0-or-later applied. Selective MIT candidate analysis added. Enterprise tier and Zaria Cloud in planning._
+_Last updated: March 2026. AGPL-3.0-or-later applied. Selective MIT candidate analysis added. SRE integrations repositioned to Enterprise tier (see SRE Tier Decision section). Enterprise tier and Zaria Cloud in planning._

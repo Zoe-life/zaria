@@ -21,7 +21,7 @@ We will respond within one business day.
 ## What the Commercial Licence Grants
 
 - **AGPL-exemption:** Deploy and modify Zaria without triggering AGPL's source-disclosure obligations.
-- **Enterprise features:** Access to fleet auditing, SAML/SSO, RBAC, audit history, policy-as-code, PDF reports, REST API export, and more (see [docs/open-source-strategy.md](./docs/open-source-strategy.md) for the full feature matrix).
+- **Enterprise features:** Access to SRE adapter connectivity (Prometheus, Datadog, Grafana), fleet auditing, SAML/SSO, RBAC, audit history, advanced SRE correlation engine, policy-as-code, PDF reports, REST API export, and more (see [docs/open-source-strategy.md](./docs/open-source-strategy.md) for the full feature matrix).
 - **Priority support SLA:** Guaranteed response times and a dedicated engineering contact.
 - **On-premises agent:** Run Zaria fully air-gapped behind your firewall.
 
