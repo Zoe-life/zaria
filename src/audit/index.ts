@@ -4,6 +4,7 @@
 
 export type {
   Severity,
+  SupportedLanguage,
   SourceFile,
   ImportEdge,
   ParsedFile,
@@ -18,6 +19,7 @@ export type {
 
 export { traverseFiles } from './traversal.js';
 export { parseFiles } from './parser.js';
+export { parseNonTsFiles } from './lang-parser.js';
 export { buildAnalysisContext } from './context.js';
 
 // Phase 5 — Performance
