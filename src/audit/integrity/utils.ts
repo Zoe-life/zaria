@@ -31,6 +31,13 @@
  *   3. (?:async\s*)?\([^)]*\)\s*=>
  *   4. \basync\s+\w+\s*\([^)]*\)\s*(?::[^{]*)?\{
  *   5. \b(?!if\b|for\b|while\b|switch\b|catch\b)\w+\s*\([^)]*\)\s*(?::[^{]*)?\{
+ *
+ * **Limitation:** The `(?::[^{]*)?` in alts 4 & 5 stops at the first `{`.
+ * When the return type is itself an object literal (e.g. `foo(): { ok: boolean } {`)
+ * the regex matches up to the return type's `{`, not the body `{`.  The
+ * `extractFunctionBodies` scanner compensates by tracking `pendingSeenColon` /
+ * `pendingReturnTypeClosed` state so that a `{` inside an object-literal return
+ * type is treated as a type-annotation brace rather than the body opener.
  */
 export const FUNCTION_START =
   /\b(?:async\s+)?function\s+\w+\s*\(|(?:const|let|var)\s+\w+\s*=\s*(?:async\s*)?\(|(?:async\s*)?\([^)]*\)\s*=>|\basync\s+\w+\s*\([^)]*\)\s*(?::[^{]*)?\{|\b(?!if\b|for\b|while\b|switch\b|catch\b)\w+\s*\([^)]*\)\s*(?::[^{]*)?\{/;
@@ -115,6 +122,25 @@ export function extractFunctionBodies(content: string): string[] {
   // alternatives (1, 2, 4) the depth guard `pendingParenDepth <= 0` is required
   // to prevent a nested `=>` in a type annotation from triggering body detection.
   let pendingIsArrow3 = false;
+  // Return-type annotation tracking for non-arrow3 alternatives.
+  // `pendingSeenColon` is set when `:` is seen after the parameter list closes
+  // (`pendingParenDepth <= 0 && pendingBraceDepth === 0`), indicating that a
+  // return-type annotation follows.
+  // `pendingReturnTypeClosed` is set once the return type has been fully consumed:
+  //   - For named/generic return types (e.g. `: string`, `: Promise<void>`): set
+  //     as soon as any non-whitespace, non-`{` character is seen after `:` at
+  //     brace/angle depth 0.
+  //   - For object-literal return types (e.g. `: { ok: boolean }`): set when
+  //     `pendingBraceDepth` drops back to 0 after tracking the `{ }` pair.
+  // `pendingAngleDepth` tracks `<` / `>` nesting in generic return-type
+  // annotations (e.g. `Promise<{ ok: boolean }>`).  A `{` seen while
+  // `pendingAngleDepth > 0` is inside a generic type argument and must not be
+  // treated as the body opener even when `pendingReturnTypeClosed` is already set.
+  // Together these flags prevent the extractor from mistaking the opening `{`
+  // of an object-literal (or generic) return type for the function body opener.
+  let pendingSeenColon = false;
+  let pendingReturnTypeClosed = false;
+  let pendingAngleDepth = 0; // `<` / `>` nesting inside return-type annotations
 
   /** Resets all pending-phase tracking to a clean initial state. */
   function resetPending(firstLine: string, isArrow3: boolean): void {
@@ -126,6 +152,9 @@ export function extractFunctionBodies(content: string): string[] {
     pendingParenDepth = 0;
     pendingBraceDepth = 0;
     pendingIsArrow3 = isArrow3;
+    pendingSeenColon = false;
+    pendingReturnTypeClosed = false;
+    pendingAngleDepth = 0;
   }
 
   for (const line of lines) {
@@ -175,9 +204,24 @@ export function extractFunctionBodies(content: string): string[] {
             // `sawArrow` alone.  For all other alternatives the parameter list
             // must have fully closed (`pendingParenDepth <= 0`) to avoid
             // mistaking a nested type-annotation `{` for the body opener.
+            //
+            // Additionally, for non-arrow3 alternatives we require
+            // `!pendingSeenColon || pendingReturnTypeClosed`: if a return-type
+            // annotation has been detected (via `:`), the annotation must be
+            // fully consumed before the `{` can be the body opener.  This
+            // prevents the opening `{` of an object-literal return type (e.g.
+            // `foo(): { ok: boolean } {`) from being misidentified as the body.
+            // We also require `pendingAngleDepth === 0` so that `{` inside a
+            // generic type argument (e.g. `Promise<{ ok: boolean }>`) is never
+            // treated as the body opener even when the named prefix has already
+            // set `pendingReturnTypeClosed`.
             const isBodyOpener =
               (pendingIsArrow3 && sawArrow && pendingBraceDepth === 0) ||
-              (!pendingIsArrow3 && pendingParenDepth <= 0 && pendingBraceDepth === 0);
+              (!pendingIsArrow3 &&
+                pendingParenDepth <= 0 &&
+                pendingBraceDepth === 0 &&
+                pendingAngleDepth === 0 &&
+                (!pendingSeenColon || pendingReturnTypeClosed));
 
             if (isBodyOpener) {
               depth = 1;
@@ -190,8 +234,47 @@ export function extractFunctionBodies(content: string): string[] {
               // mistake its closing `}` for a body terminator.
               pendingBraceDepth++;
             }
-          } else if (ch === '}' && pendingBraceDepth > 0) {
-            pendingBraceDepth--;
+          } else if (ch === '}') {
+            if (pendingBraceDepth > 0) {
+              pendingBraceDepth--;
+              // If we just closed a return-type object literal, mark the return
+              // type as fully consumed so the next `{` is accepted as the body.
+              if (pendingBraceDepth === 0 && pendingSeenColon) {
+                pendingReturnTypeClosed = true;
+              }
+            }
+            // pendingBraceDepth === 0: `}` belongs to an outer scope and must
+            // not influence return-type tracking — no action required.
+          } else if (
+            ch === ':' &&
+            pendingParenDepth === 0 &&
+            pendingBraceDepth === 0 &&
+            !pendingSeenColon
+          ) {
+            // Entering a return-type annotation.
+            pendingSeenColon = true;
+          } else if (ch === '<' && pendingParenDepth <= 0 && pendingBraceDepth === 0) {
+            // Opening a generic type argument in the return-type zone
+            // (e.g. `Promise<...>`).  Track depth so the `{` of an inner
+            // object type (e.g. `Promise<{ ok: boolean }>`) is not mistaken
+            // for the body opener.
+            pendingAngleDepth++;
+          } else if (ch === '>' && pendingAngleDepth > 0) {
+            pendingAngleDepth--;
+          } else if (
+            pendingSeenColon &&
+            !pendingReturnTypeClosed &&
+            pendingBraceDepth === 0 &&
+            pendingAngleDepth === 0 &&
+            ch !== ' ' &&
+            ch !== '\t' &&
+            ch !== '\r'
+          ) {
+            // Non-whitespace content in the return-type zone at brace/angle
+            // depth 0 means the return type is a named/generic type (not an
+            // object literal starting with `{`), so the next `{` at depth 0
+            // is the body opener.
+            pendingReturnTypeClosed = true;
           }
         } else if (inFunction) {
           if (ch === '{') {

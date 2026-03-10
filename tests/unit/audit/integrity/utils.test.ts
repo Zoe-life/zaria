@@ -193,6 +193,55 @@ describe('extractFunctionBodies', () => {
     expect(bodies[0]).toContain('input.length');
   });
 
+  // Regression: object-literal return-type annotations (`foo(): { ok: boolean } {`)
+  // must not be mistaken for the function body opener.
+  it('extracts a non-async method shorthand body with an object-literal return type', () => {
+    // Without the fix the scanner enters the body at the `{` of `{ ok: boolean }`,
+    // then immediately terminates at its matching `}`, producing 0 captured bodies.
+    const content = [
+      'class Repo {',
+      '  findOne(id: string): { ok: boolean } {',
+      '    return { ok: true };',
+      '  }',
+      '}',
+    ].join('\n');
+    const bodies = extractFunctionBodies(content);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toContain('ok: true');
+  });
+
+  it('extracts an async method shorthand body with an object-literal return type', () => {
+    const content = [
+      'class Repo {',
+      '  async findOne(id: string): Promise<{ ok: boolean }> {',
+      '    return { ok: true };',
+      '  }',
+      '}',
+    ].join('\n');
+    const bodies = extractFunctionBodies(content);
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]).toContain('ok: true');
+  });
+
+  it('extracts multiple method bodies when some have object-literal return types', () => {
+    // Both methods must be captured; the object-literal return type in the first
+    // method must not corrupt body tracking for the second.
+    const content = [
+      'class Service {',
+      '  status(): { active: boolean } {',
+      '    return { active: true };',
+      '  }',
+      '  name(): string {',
+      '    return "svc";',
+      '  }',
+      '}',
+    ].join('\n');
+    const bodies = extractFunctionBodies(content);
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0]).toContain('active: true');
+    expect(bodies[1]).toContain('"svc"');
+  });
+
   it('does not extract control-flow blocks as function bodies', () => {
     const content = [
       'function main() {',
