@@ -12,11 +12,7 @@ export default [
     languageOptions: {
       parser: tsParser,
       parserOptions: {
-        projectService: {
-          allowDefaultProject: ['tests/unit/*.ts', 'tests/unit/cli/*.ts', 'tests/unit/config/*.ts', 'tests/unit/audit/*.ts', 'tests/unit/audit/performance/*.ts', 'tests/unit/audit/architecture/*.ts', 'tests/unit/audit/scalability/*.ts', 'tests/unit/audit/integrity/*.ts', 'tests/unit/audit/maintenance/*.ts', 'tests/unit/audit/efficiency/*.ts', 'tests/unit/scorer/*.ts', 'tests/unit/report/*.ts', 'tests/unit/sre/*.ts', 'tests/integration/*.ts'],
-          defaultProject: './tsconfig.lint.json',
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 50,
-        },
+        project: './tsconfig.lint.json',
         tsconfigRootDir: import.meta.dirname,
         ecmaVersion: 2022,
         sourceType: 'module',
