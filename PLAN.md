@@ -18,10 +18,10 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 | 6 ✅ | Audit Engine — Architecture | Architecture dimension rules and scoring |
 | 7 ✅ | Audit Engine — Scalability & Observability | Scalability dimension rules and scoring |
 | 8 ✅ | Audit Engine — Data Integrity & Race Conditions | Integrity dimension rules and scoring |
-| 9 | Audit Engine — Long-Term Maintenance | Maintenance dimension rules and scoring |
-| 10 | Scoring & Aggregation | Weighted overall score, dimension scores |
-| 11 | Report Output System | Terminal, JSON, HTML, Markdown, SARIF |
-| 12 | SRE Tool Integration | Optional Prometheus, Datadog, Grafana, etc. |
+| 9 ✅ | Audit Engine — Long-Term Maintenance | Maintenance dimension rules and scoring |
+| 10 ✅ | Scoring & Aggregation | Weighted overall score, dimension scores |
+| 11 ✅ | Report Output System | Terminal, JSON, HTML, Markdown, SARIF |
+| 12 ✅ | SRE Tool Integration | Optional Prometheus, Datadog, Grafana, etc. |
 | 13 | CI/CD Integration | Quality gates, exit codes, GitHub Actions |
 | 14 | Plugin Architecture | Plugin loader, typed interface, registry |
 | 15 | Testing & Quality Assurance | Unit, integration, and E2E test suites |
@@ -425,72 +425,99 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 ---
 
-## Phase 10 — Scoring & Aggregation
+## Phase 10 — Scoring & Aggregation ✅
 
 **Goal:** Weighted overall score, dimension scores.
 
 ### Tasks
 
-10.1. **Define scoring weights**
+10.1. **Define scoring weights** ✅
   - Performance: 25%, Architecture: 25%, Scalability: 20%, Integrity: 20%, Maintenance: 10%.
 
-10.2. **Implement `scorer/aggregate.ts`**
+10.2. **Implement `scorer/aggregate.ts`** ✅
   - Accept all five dimension scores and produce a weighted overall score (0–100).
+  - `aggregateScores(dimensions): OverallScore` — O(n) time, O(n) space.
+  - `gradeFromScore(score): Grade` — O(1) using ordered boundary table.
 
-10.3. **Implement grade thresholds**
+10.3. **Implement grade thresholds** ✅
   - A: 90–100, B: 80–89, C: 70–79, D: 60–69, F: 0–59.
 
-10.4. **Write unit tests for the scorer**
+10.4. **Add `OverallScore`, `Grade`, `AuditResult` types to `src/audit/types.ts`** ✅
+  - `AuditResult` is the top-level output type for the whole audit pipeline.
 
-10.5. **Verify Phase 10**
+10.5. **Write unit tests for the scorer** ✅
+  - `tests/unit/scorer/aggregate.test.ts` — 22 tests covering all grade boundaries, weight computations, and edge cases.
+
+10.6. **Verify Phase 10** ✅
+  - All 22 scorer tests pass; lint clean.
 
 ---
 
-## Phase 11 — Report Output System
+## Phase 11 — Report Output System ✅
 
 **Goal:** Terminal, JSON, HTML, Markdown, SARIF.
 
 ### Tasks
 
-11.1. **Implement `report/terminal.ts`** — colourised, tabular terminal output using `chalk` and `cli-table3`.
+11.1. **Implement `report/terminal.ts`** ✅ — ANSI-coloured terminal output (no external colour libs; inlined escape codes). Includes grade badge, dimension progress bars, finding summary, and optional verbose finding list sorted by severity.
 
-11.2. **Implement `report/json.ts`** — machine-readable JSON output.
+11.2. **Implement `report/json.ts`** ✅ — machine-readable JSON output; `JSON.stringify` with configurable indent.
 
-11.3. **Implement `report/markdown.ts`** — GitHub/GitLab PR comment format.
+11.3. **Implement `report/markdown.ts`** ✅ — GitHub/GitLab PR comment format; emoji severity badges; stable sort (severity → file path); pipe-escaped table cells.
 
-11.4. **Implement `report/html.ts`** — self-contained HTML report.
+11.4. **Implement `report/html.ts`** ✅ — self-contained, offline-capable HTML report; inline CSS; XSS-safe via `he()` HTML-escaping helper.
 
-11.5. **Implement `report/sarif.ts`** — SARIF 2.1.0 format for GitHub Code Scanning.
+11.5. **Implement `report/sarif.ts`** ✅ — SARIF 2.1.0 JSON; deduplicates rule entries using a `Map`; maps severity to SARIF levels; converts absolute paths to `file://` URIs; supports GitHub Code Scanning, Azure DevOps, and VS Code SARIF Viewer.
 
-11.6. **Implement `report/index.ts`** — factory that picks the correct formatter based on config.
+11.6. **Implement `report/index.ts`** ✅ — `generateReport(result, format, verbose): string` factory; TypeScript exhaustiveness check ensures all `OutputFormat` values are handled at compile time.
 
-11.7. **Write unit tests for each reporter**
+11.7. **Wire up audit commands** ✅ — `src/cli/commands/audit.ts` now runs the full audit pipeline (traverse → parse → analyse → score → report) and supports `--output`, `--file`, `--threshold`, `--skip`, `--verbose`.
 
-11.8. **Verify Phase 11**
+11.8. **Write unit tests for each reporter** ✅
+  - `tests/unit/report/{json,terminal,markdown,html,sarif,index}.test.ts` — 60 tests total.
+
+11.9. **Verify Phase 11** ✅
+  - All 60 reporter tests pass; lint clean.
+  - `zaria audit <path> -o json` produces a valid JSON report.
+  - `zaria audit <path> -o html -f report.html` writes a self-contained HTML file.
+  - `zaria audit <path> -t 80` exits with code 1 when score < 80.
 
 ---
 
-## Phase 12 — SRE Tool Integration
+## Phase 12 — SRE Tool Integration ✅
 
 **Goal:** Optional Prometheus, Datadog, Grafana, etc.
 
 ### Tasks
 
-12.1. **Define the `SreProvider` interface** — `{ name, test(): Promise<boolean>, fetchMetrics(query): Promise<Metric[]> }`.
+12.1. **Define the `SreProvider` interface** ✅
+  - `src/sre/types.ts` — `SreProvider`, `Metric`, `SreConfig`, `SreEnrichment` types.
+  - `SreProvider.test(): Promise<boolean>` and `fetchMetrics(query): Promise<Metric[]>`.
 
-12.2. **Implement `sre/prometheus.ts`** — PromQL query adapter.
+12.2. **Implement `sre/prometheus.ts`** ✅
+  - `PrometheusAdapter` — instant PromQL query via `/api/v1/query`; supports Bearer token and HTTP Basic auth; uses native `fetch` + `AbortSignal.timeout` for deadline control.
+  - Time O(R) where R = number of result series.
 
-12.3. **Implement `sre/datadog.ts`** — Datadog Metrics API adapter.
+12.3. **Implement `sre/datadog.ts`** ✅
+  - `DatadogAdapter` — Datadog Metrics API v1; credential parsing from `basicAuth: "apikey:appkey"`; 1-hour default time window; last non-null point extraction; tag → label map conversion.
 
-12.4. **Implement `sre/grafana.ts`** — Grafana HTTP API adapter.
+12.4. **Implement `sre/grafana.ts`** ✅
+  - `GrafanaAdapter` — Grafana `/api/health` for connectivity; `/api/alerting/alerts` for alert state metrics; forward-compatible for future datasource queries.
 
-12.5. **Implement `sre/connect.ts`** — interactive provider setup wizard.
+12.5. **Implement `sre/connect.ts`** ✅
+  - `runConnectWizard()` — TTY-aware interactive wizard (uses `readline/promises` in TTY, env vars in CI); provider factory `createProvider(name, config): SreProvider`.
+  - `ZARIA_SRE_PROVIDER`, `ZARIA_SRE_BASE_URL`, `ZARIA_SRE_TOKEN` env vars for non-interactive use.
 
-12.6. **Integrate SRE data into audit engines** — enrich static findings with runtime error rates and latency data.
+12.6. **Wire up `sre` CLI commands** ✅
+  - `zaria sre connect` — invokes the interactive wizard and reports connection status.
+  - `zaria sre test --provider <name> --url <url> [--token <token>]` — pings a provider and exits 0/1.
 
-12.7. **Write unit tests with mocked SRE providers**
+12.7. **Write unit tests with mocked SRE providers** ✅
+  - `tests/unit/sre/providers.test.ts` — 22 tests covering all three adapters and the `createProvider` factory; uses `vi.stubGlobal('fetch', ...)` to mock HTTP calls.
 
-12.8. **Verify Phase 12**
+12.8. **Verify Phase 12** ✅
+  - All 22 SRE tests pass; lint clean.
+  - `zaria sre test --provider prometheus --url https://prom.example.com --token tok` exits 1 when unreachable.
 
 ---
 

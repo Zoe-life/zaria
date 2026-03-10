@@ -11,6 +11,9 @@ export type {
   Finding,
   Rule,
   DimensionResult,
+  Grade,
+  OverallScore,
+  AuditResult,
 } from './types.js';
 
 export { traverseFiles } from './traversal.js';

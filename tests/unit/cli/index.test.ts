@@ -52,40 +52,38 @@ describe('CLI program', () => {
   // audit command
   it('audit: default path is cwd', () => {
     parse(['audit']);
-    expect(loggerInfoSpy).toHaveBeenCalledWith(
-      expect.stringMatching(/^Running full audit on .+…$/),
-    );
+    expect(loggerInfoSpy).toHaveBeenCalledWith(expect.stringMatching(/^Analysing .+…$/));
   });
 
   it('audit: explicit path', () => {
     parse(['audit', '/tmp/project']);
-    expect(loggerInfoSpy).toHaveBeenCalledWith('Running full audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Analysing /tmp/project…');
   });
 
   // audit sub-commands
   it('audit:perf: explicit path', () => {
     parse(['audit:perf', '/tmp/project']);
-    expect(loggerInfoSpy).toHaveBeenCalledWith('Running performance audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Analysing /tmp/project…');
   });
 
   it('audit:arch: explicit path', () => {
     parse(['audit:arch', '/tmp/project']);
-    expect(loggerInfoSpy).toHaveBeenCalledWith('Running architecture audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Analysing /tmp/project…');
   });
 
   it('audit:scale: explicit path', () => {
     parse(['audit:scale', '/tmp/project']);
-    expect(loggerInfoSpy).toHaveBeenCalledWith('Running scalability audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Analysing /tmp/project…');
   });
 
   it('audit:integrity: explicit path', () => {
     parse(['audit:integrity', '/tmp/project']);
-    expect(loggerInfoSpy).toHaveBeenCalledWith('Running integrity audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Analysing /tmp/project…');
   });
 
   it('audit:maint: explicit path', () => {
     parse(['audit:maint', '/tmp/project']);
-    expect(loggerInfoSpy).toHaveBeenCalledWith('Running maintenance audit on /tmp/project…');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Analysing /tmp/project…');
   });
 
   // report command
@@ -124,14 +122,16 @@ describe('CLI program', () => {
   });
 
   // sre commands
-  it('sre connect: prints stub message', () => {
+  it('sre connect: logs startup message', () => {
     parse(['sre', 'connect']);
-    expect(loggerInfoSpy).toHaveBeenCalledWith('SRE connection wizard — coming soon.');
+    expect(loggerInfoSpy).toHaveBeenCalledWith('Starting SRE connection wizard…');
   });
 
-  it('sre test: prints stub message', () => {
+  it('sre test: prints configured message', () => {
     parse(['sre', 'test']);
-    expect(loggerInfoSpy).toHaveBeenCalledWith('No SRE providers configured.');
+    expect(loggerInfoSpy).toHaveBeenCalledWith(
+      'No SRE providers configured. Run `zaria sre connect` to set one up.',
+    );
   });
 
   // plugin commands
