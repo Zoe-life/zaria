@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { resolve } from 'path';
 import { logger } from '../../logger.js';
 import { discoverPlugins } from '../../plugin/discovery.js';
+import { trackEvent } from '../../telemetry/index.js';
 
 /** `zaria plugin` — plugin management sub-commands. */
 export const pluginCommand = new Command('plugin').description('Manage Zaria plugins');
@@ -19,6 +20,7 @@ pluginCommand
     } else {
       logger.info(`Found ${discovered.length} plugin(s): ${discovered.join(', ')}`);
     }
+    trackEvent('plugin_listed', { pluginCount: discovered.length, pluginNames: discovered });
   });
 
 /** `zaria plugin add <name>` — installs a plugin. */
@@ -27,6 +29,7 @@ pluginCommand
   .description('Install a Zaria plugin')
   .action((name: string) => {
     logger.info(`Installing plugin ${name}…`);
+    trackEvent('plugin_added', { pluginName: name });
   });
 
 /** `zaria plugin remove <name>` — removes a plugin. */
@@ -35,4 +38,5 @@ pluginCommand
   .description('Remove a Zaria plugin')
   .action((name: string) => {
     logger.info(`Removing plugin ${name}…`);
+    trackEvent('plugin_removed', { pluginName: name });
   });

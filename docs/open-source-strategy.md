@@ -147,6 +147,116 @@ The AGPL community edition is a fully capable static-analysis tool. The Enterpri
 
 ---
 
+## Plugin System Tier Decision
+
+The plugin system (`src/plugin/`, the `zaria plugin` CLI command, the `ZariaPlugin`
+interface, and the official plugin packages such as `zaria-plugin-nextjs`) is
+currently placed in the **AGPL community edition**.  This section documents the
+trade-off analysis behind that decision, including the explicit case that could
+be made for moving it to Enterprise.
+
+### The Case for Moving the Plugin System to Enterprise
+
+1. **Plugin authoring is a commercial lever.** Organisations that need
+   company-specific audit rules — e.g., "flag use of our deprecated internal
+   SDK", "enforce our service-mesh naming convention" — must pay for the custom
+   rule authoring UI that is already in the Enterprise tier.  Locking the
+   programmatic plugin API behind the same paywall creates an unambiguous forcing
+   function: organisations that write TypeScript rules either pay for Enterprise
+   or they don't get to extend Zaria at all.
+
+2. **A proprietary plugin SDK protects against unbundled competitors.** An
+   open-source CLI plugin system can be copied and made the basis of a rival
+   product.  A proprietary SDK cannot.
+
+3. **Alignment with the "Custom rule authoring UI" Enterprise feature.** The
+   browser-based rule wizard is already in the Enterprise tier.  One could argue
+   that all rule-extension capabilities — whether no-code (the UI) or code-first
+   (the SDK) — should live at the same tier for consistency.
+
+### The Case for Keeping the Plugin System in AGPL (the chosen position)
+
+1. **No successful open-core developer tool has a proprietary plugin system.**
+   ESLint's competitive dominance is built entirely on `npm install eslint-plugin-*`.
+   VS Code's market position is built on its open extensions API.  Babel,
+   Webpack, Rollup, Prettier — every developer tool that has achieved ecosystem
+   dominance has done so by making plugin authoring free and frictionless.  The
+   pattern of "pay to extend the tool" has no successful precedent in the
+   developer-tooling market.  Zaria would be entering an already-competitive
+   space with a structural disadvantage baked in from launch.
+
+2. **A locked plugin system permanently caps the community edition's utility.**
+   Without plugins, the community edition can only audit TypeScript and JavaScript
+   projects using Zaria's 24 built-in rules.  With an open plugin system,
+   `zaria-plugin-python`, `zaria-plugin-go`, `zaria-plugin-nextjs`, and
+   `zaria-plugin-prisma` extend Zaria into a general-purpose, multi-language
+   audit platform.  Locking the plugin API behind Enterprise makes the community
+   edition a narrow-purpose tool that competes against free specialist linters
+   (ESLint, Pylint, golint) rather than complementing them.
+
+3. **Plugin authoring is the primary contribution pathway.**  The developers
+   most likely to contribute to Zaria are those who want to add rules for their
+   framework, ORM, or language.  Closing the plugin API closes that pathway
+   completely.  The community that forms around the open plugin ecosystem — plugin
+   authors, framework evangelists, language-specific contributors — is exactly the
+   community that introduces Zaria to enterprise engineering teams.  Removing that
+   community removes the enterprise sales funnel.
+
+4. **AGPL already protects the plugin architecture against proprietary forks.**
+   Under AGPL, anyone who improves the plugin loader, discovery mechanism, or
+   sandboxing model and deploys that improvement as a networked service must
+   publish those improvements.  This is precisely the protection AGPL was chosen
+   to provide.  A proprietary plugin system adds marginal additional protection
+   while destroying adoption.
+
+5. **The "Custom rule authoring UI" Enterprise feature already monetises the
+   plugin concept at the correct boundary.**  The AGPL CLI plugin SDK targets
+   developers who write TypeScript and use a terminal.  The Enterprise rule
+   authoring UI targets compliance officers, team leads, and organisations that
+   need rules but do not have engineers to write them.  These are genuinely
+   different buyer personas at genuinely different price points.  There is no
+   need to collapse them into a single Enterprise gate.
+
+6. **A closed plugin SDK is trivially circumvented.**  Because Zaria's audit
+   engine is AGPL-licensed, a determined competitor can call the same analysis
+   functions directly from their own code without using the plugin interface at
+   all.  The plugin API provides a *convenience contract*, not a unique capability
+   that can serve as an effective commercial moat.
+
+7. **Official plugin packages are adoption drivers, not give-aways.**  The first-
+   party plugins (`zaria-plugin-nextjs`, `zaria-plugin-prisma`, etc.) are how
+   Zaria enters framework-specific communities.  A Next.js developer who installs
+   `zaria-plugin-nextjs` because it catches real Next.js anti-patterns becomes an
+   organic advocate for Zaria Cloud when their company scales.  Charging for those
+   plugins at the plugin-system level is the equivalent of ESLint charging for
+   `eslint-plugin-react` — it would simply not happen.
+
+### Decision
+
+**The plugin system stays in AGPL permanently.**  This includes the plugin
+loader (`src/plugin/`), the discovery mechanism, the `ZariaPlugin` and `Rule`
+TypeScript interfaces, the `zaria plugin` CLI commands, and all official
+first-party plugin packages published under the `zaria-plugin-*` namespace.
+
+The correct monetisation boundary for rule-extension capabilities is:
+
+| Capability | Tier | Rationale |
+|---|---|---|
+| **Plugin SDK** (TypeScript `ZariaPlugin` interface, `--plugins` flag, auto-discovery) | AGPL | Developer-facing extension; drives ecosystem and adoption |
+| **Official plugin packages** (`zaria-plugin-nextjs`, etc.) | AGPL (free on npm) | Adoption drivers; grow the funnel into enterprise sales |
+| **Custom rule authoring UI** (browser-based, no-code wizard) | Enterprise | Compliance-officer / non-developer persona; justifies commercial pricing |
+| **Private enterprise plugin development** (Zaria team authors bespoke rules under contract) | Enterprise service | Professional services revenue; not a product feature |
+
+Moving the plugin SDK to Enterprise would destroy the community edition's
+extensibility, eliminate the primary contributor pathway, and put Zaria in
+direct conflict with the playbook that has produced every successful
+developer-tool open-core business.  The "Custom rule authoring UI" is already
+the right commercial monetisation of rule extensibility for the buyer who needs
+it — the enterprise compliance officer — without taxing the developer who simply
+wants to write a rule.
+
+---
+
 ## Selective MIT Candidate Analysis
 
 Not all AGPL features are equal candidates for eventual MIT relicensing. The test for each feature is: **does releasing it under MIT primarily grow the ecosystem, or does it primarily hand competitive advantage to commercial actors who would not give improvements back?**
@@ -240,9 +350,10 @@ You **must** purchase a commercial licence if:
 ## Community Commitments
 
 1. **The AGPL feature set is frozen against paywall regressions.** Features listed in the "AGPL Community Edition" table above will never be moved behind the enterprise tier. This is a permanent, public commitment. *(Note: SRE integrations were repositioned to Enterprise during pre-launch internal planning, before any public release or community adoption. The current AGPL table reflects the definitive community feature set.)*
-2. **Selective MIT relicensing is additive, not reductive.** If a module is moved from AGPL to MIT, no functionality is removed — the change only relaxes the licence on that module. Nothing already open will be closed.
-3. **The enterprise/community boundary is documented here.** Any change to this table will be announced publicly with at least 90 days' notice.
-4. **Enterprise features are genuinely enterprise.** SSO, RBAC, fleet management, SRE integrations, and SLAs are things individual developers do not need. Core static-analysis audit capability stays in the open.
+2. **The plugin system stays in AGPL permanently.** The plugin SDK, plugin loader, `ZariaPlugin` interface, `zaria plugin` CLI commands, and all official `zaria-plugin-*` packages are, and will remain, free for all AGPL-compliant users. See the Plugin System Tier Decision section for the full analysis behind this commitment.
+3. **Selective MIT relicensing is additive, not reductive.** If a module is moved from AGPL to MIT, no functionality is removed — the change only relaxes the licence on that module. Nothing already open will be closed.
+4. **The enterprise/community boundary is documented here.** Any change to this table will be announced publicly with at least 90 days' notice.
+5. **Enterprise features are genuinely enterprise.** SSO, RBAC, fleet management, SRE integrations, and SLAs are things individual developers do not need. Core static-analysis audit capability — including the plugin system — stays in the open.
 
 ---
 
@@ -262,4 +373,50 @@ Grafana is the closest structural parallel: AGPL community edition, proprietary 
 
 ---
 
-_Last updated: March 2026. AGPL-3.0-or-later applied. Selective MIT candidate analysis added. SRE integrations repositioned to Enterprise tier (see SRE Tier Decision section). Audit intelligence confirmed as AGPL-permanent (see Audit Intelligence Tier Decision section). Enterprise tier and Zaria Cloud in planning._
+_Last updated: March 2026. AGPL-3.0-or-later applied. Selective MIT candidate analysis added. SRE integrations repositioned to Enterprise tier (see SRE Tier Decision section). Audit intelligence confirmed as AGPL-permanent (see Audit Intelligence Tier Decision section). Plugin system confirmed as AGPL-permanent (see Plugin System Tier Decision section). Enterprise tier and Zaria Cloud in planning._
+
+---
+
+## Licensing FAQ
+
+This section answers common questions about the order in which Zaria's licences were applied and the risks of alternative approaches.
+
+### "Why not launch under 'all rights reserved', publicise the project, then switch to AGPL?"
+
+Under copyright law, publishing code without an explicit licence does **not** mean anyone is free to use it — it means the code is implicitly "all rights reserved" (full copyright). In practice, however, the developer-tools community treats unlicensed open-source code as ambiguous: many developers will avoid it, and some will copy it, because the legal situation is unclear.
+
+More critically, this sequencing introduces a **window of competitive risk** that AGPL-from-the-start avoids:
+
+1. **The copy window.** During the period between public announcement (e.g., LinkedIn posts) and the application of the AGPL licence, anyone who downloaded or forked the repository received a copy under whatever terms existed at that moment — which, without an explicit licence, is legally murky.  Applying AGPL *after the fact* does **not** retroactively bind those earlier copies.  A competitor who downloaded the code during that window could argue they have a copy with no binding licence restriction (or, conversely, that your copyright claim means they need to seek permission — which benefits you but requires litigation to enforce).
+
+2. **No community protection.** AGPL's copyleft clause — the mechanism that forces any network-deployed fork to publish its modifications — only applies from the moment the AGPL licence is applied.  Improvements a competitor made during the unlicensed window are not covered.
+
+3. **Trust cost.** Applying a restrictive licence *after* publicising a project is sometimes perceived as a bait-and-switch even when it is legally clean.  Starting with AGPL from day one establishes trust with the community immediately.
+
+**The verdict:** Starting under AGPL (the chosen approach) is strictly better.  It closes the window immediately, establishes community expectations clearly, and requires no subsequent licence-change announcement.
+
+### "Doesn't applying AGPL *after* an 'all rights reserved' period still present a loophole?"
+
+Yes — and this is exactly why Zaria applied AGPL before any public code release.  If you were to:
+
+1. Publish the code publicly without a licence (or under "all rights reserved"),
+2. Promote it (LinkedIn, Hacker News, etc.), and
+3. Apply AGPL some days or weeks later,
+
+then anyone who copied the repository during steps 1–2 would have a copy that predates the AGPL.  Whether they could legally *use* that copy is a separate copyright question, but you would face difficulty enforcing copyleft obligations against them because you had not yet granted those obligations at the time of copying.
+
+**In summary:** the window is real, the risk is real, and applying AGPL from day one is the correct mitigation — which is exactly what Zaria did.
+
+### "What about moving from AGPL to MIT for some modules later — does that create a loophole?"
+
+Selective relicensing from AGPL to MIT (see the Selective MIT Candidate Analysis above) is an **additive** change — it grants users more freedom, not less.  It does not create a loophole for competitors because:
+
+- MIT-licensed code can be used in proprietary products, **but** the audit-intelligence modules (the rules and scorers) remain AGPL permanently.  The infrastructure plumbing that might move to MIT has no standalone commercial value without the rules.
+- Any company that builds on MIT-licensed Zaria infrastructure still cannot copy the AGPL-licensed detection engine into a proprietary product.
+- The selective relicensing is done module by module, under conditions described in the Selective MIT Candidate Analysis, only after the Enterprise tier generates sustainable revenue.
+
+The risk of a competitor exploiting an MIT-licensed module is low precisely because infrastructure without intelligence is not a product.
+
+### "Should I create a Zaria GitHub organisation, dedicated email addresses, and other operational accounts before building enterprise features?"
+
+See [`docs/startup-operational-checklist.md`](./startup-operational-checklist.md) for the complete list of pre-enterprise operational tasks, including email infrastructure, brand identity, legal entity, community channels, and technical infrastructure.
