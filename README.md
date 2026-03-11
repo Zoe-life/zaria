@@ -8,18 +8,19 @@
 
 1. [Overview](#overview)
 2. [Key Features](#key-features)
-3. [Audit Dimensions](#audit-dimensions)
-4. [Language Support](#language-support)
-5. [Tech Stack](#tech-stack)
-6. [Quick Start](#quick-start)
-7. [CLI Usage](#cli-usage)
-8. [Configuration](#configuration)
-9. [SRE Tool Integration (Optional)](#sre-tool-integration-optional)
-10. [Report Formats](#report-formats)
-11. [Architecture Overview](#architecture-overview)
-12. [Roadmap](#roadmap)
-13. [Contributing](#contributing)
-14. [License](#license)
+3. [How Zaria Compares](#how-zaria-compares)
+4. [Audit Dimensions](#audit-dimensions)
+5. [Language Support](#language-support)
+6. [Tech Stack](#tech-stack)
+7. [Quick Start](#quick-start)
+8. [CLI Usage](#cli-usage)
+9. [Configuration](#configuration)
+10. [SRE Tool Integration (Optional)](#sre-tool-integration-optional)
+11. [Report Formats](#report-formats)
+12. [Architecture Overview](#architecture-overview)
+13. [Roadmap](#roadmap)
+14. [Contributing](#contributing)
+15. [License](#license)
 
 ---
 
@@ -42,6 +43,30 @@ Zaria analyses static code, project structure, dependency graphs, and configurat
 - **Multi-language support** — audits TypeScript, JavaScript, Python, Go, Rust, Java, C, C++, and C# codebases. TypeScript and JavaScript receive full AST analysis; all other languages are analysed with heuristic regex parsers for LOC, complexity, and import-graph metrics. Language-specific deep rules are provided by the plugin ecosystem (e.g. `zaria-plugin-python`, `zaria-plugin-go`).
 - **Plugin architecture** — extend Zaria with custom audit rules for your organisation's standards.
 - **Enterprise Edition** — fleet auditing, SAML/SSO, RBAC, centralised audit history, policy-as-code, PDF reports, and Zaria Cloud. See [COMMERCIAL-LICENSE.md](./COMMERCIAL-LICENSE.md).
+
+---
+
+## How Zaria Compares
+
+Zaria occupies a different space from existing static-analysis tools:
+
+| Capability | Zaria | SonarQube | CodeClimate | ESLint / Pylint | Semgrep |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Zero-setup CLI | ✅ | ❌ server | ❌ SaaS | ✅ | ✅ |
+| Weighted A–F score across all dimensions | ✅ | ❌ | ⚠️ | ❌ | ❌ |
+| Performance dimension (N+1, blocking I/O) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Scalability dimension (scaling readiness) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| SRE / runtime data enrichment | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Actionable recommendation on every finding | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Per-dimension CI quality gates | ✅ | ⚠️ | ❌ | ❌ | ❌ |
+| Security vulnerability depth | ⚠️ | ✅ | ⚠️ | ⚠️ | ✅ |
+| Language breadth (AST-level) | ⚠️ (2) | ✅ (30+) | ✅ (many) | ⚠️ (1 each) | ✅ (30+) |
+
+> ✅ Full  ⚠️ Partial  ❌ Not available
+
+**Zaria's unique position:** it is the only tool that combines a holistic multi-dimensional code health score with optional real-time SRE data enrichment, all from a single `npx zaria audit` command with zero configuration.
+
+Zaria is designed to be **complementary** to linters (ESLint, Pylint) and security scanners (Semgrep) — not a replacement. See **[docs/competitive-comparison.md](./docs/competitive-comparison.md)** for the full comparison including honest assessments of where other tools are stronger.
 
 ---
 
@@ -92,7 +117,7 @@ Zaria analyses source code at two levels:
 | **Full AST** | TypeScript, JavaScript | [ts-morph](https://ts-morph.com/) — complete AST traversal, type-aware import resolution, and precise symbol counts |
 | **Heuristic** | Python, Go, Rust, Java, C, C++, C# | Regex-based parsers — LOC, function/class counts, and import-graph extraction |
 
-All nine languages flow through the same five-dimensional scoring engine (Performance, Architecture, Scalability, Integrity, Maintenance). Language-specific deep analysis rules — such as Python's bare-`except` detection or Go's goroutine patterns — are provided as opt-in plugins:
+All nine languages flow through the same six-dimensional scoring engine (Performance, Architecture, Scalability, Integrity, Maintenance, Efficiency). Language-specific deep analysis rules — such as Python's bare-`except` detection or Go's goroutine patterns — are provided as opt-in plugins:
 
 | Plugin | Language |
 |---|---|
@@ -390,7 +415,7 @@ Configure via interactive wizard (`zaria sre connect`) or env vars (`ZARIA_SRE_P
 | Milestone | Target | Description |
 |---|---|---|
 | **v0.1** | Phase 1–3 | Core CLI skeleton, configuration, basic static analysis |
-| **v0.2** | Phase 4–6 | Full five-dimension audit engine for TypeScript and JavaScript web apps |
+| **v0.2** | Phase 4–6 | Full six-dimension audit engine for TypeScript and JavaScript web apps |
 | **v0.3** | Phase 7–8 | Scalability & Observability + Data Integrity & Race Conditions engines |
 | **v0.4** ✅ | Phase 9 | Long-Term Maintenance engine — cyclomatic complexity, code duplication, deprecated/outdated dependencies, missing test coverage |
 | **v0.5** ✅ | Phase 10–11 | Weighted scoring & aggregation, five report formats, real audit pipeline |
