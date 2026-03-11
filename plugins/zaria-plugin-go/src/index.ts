@@ -122,7 +122,7 @@ const go003: Rule = {
   severity: 'low',
   check(context: AnalysisContext): Finding[] {
     const findings: Finding[] = [];
-    const FMT_PRINT_RE = /\bfmt\.Print(?:f|ln|err)?\s*\(/;
+    const FMT_PRINT_RE = /\bfmt\.Print(?:f|ln)?\s*\(/;
 
     for (const file of goFiles(context)) {
       if (TEST_FILE_RE.test(file.sourceFile.path)) continue;

@@ -141,7 +141,7 @@ const cpp003: Rule = {
             line: idx + 1,
             recommendation:
               'Use type-safe alternatives:\n' +
-              '  std::cout << "Value: " << value << "\\n";   // iostream\n' +
+              '  std::cout << "Value: " << value << std::endl;  // iostream\n' +
               '  std::string s = std::format("Value: {}", value); // C++20\n' +
               'For output with complex formatting, consider the {fmt} library.',
           });
