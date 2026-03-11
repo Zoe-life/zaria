@@ -17,6 +17,7 @@ import type { OutputFormat } from '../../report/index.js';
 import type { DimensionResult, AuditResult } from '../../audit/types.js';
 import { loadPlugins } from '../../plugin/loader.js';
 import { discoverPlugins } from '../../plugin/discovery.js';
+import { trackEvent } from '../../telemetry/index.js';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -238,6 +239,20 @@ async function runAudit(
   } else {
     process.stdout.write(report + '\n');
   }
+
+  // Track usage telemetry (fire-and-forget; never blocks; opt-out via ZARIA_TELEMETRY=0).
+  trackEvent('audit_run', {
+    command: limitToNames.size === 1 ? `audit:${[...limitToNames][0]}` : 'audit',
+    dimensions: activeDimensions.map((d) => d.name),
+    dimensionCount: activeDimensions.length,
+    pluginCount: plugins.length,
+    pluginNames: plugins.map((p) => p.name),
+    outputFormat: format,
+    hasThreshold: flags.threshold != null,
+    hasDimThreshold: !!flags.dimThreshold,
+    hasFile: !!flags.file,
+    overallScore: Math.round(overall.weighted),
+  });
 
   // Phase 13 — CI quality gates
   // 13.1: exit 1 when the overall score is below the --threshold flag.
