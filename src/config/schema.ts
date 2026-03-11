@@ -15,6 +15,9 @@ export const ProjectLanguageSchema = z.enum([
   'go',
   'rust',
   'java',
+  'c',
+  'cpp',
+  'csharp',
 ]);
 
 /** Audit dimensions available in Zaria. */

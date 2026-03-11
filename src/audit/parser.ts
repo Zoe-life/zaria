@@ -13,6 +13,7 @@ import { Project, SyntaxKind } from 'ts-morph';
 import { resolve, dirname } from 'path';
 import { existsSync } from 'fs';
 import type { SourceFile as ZariaSourceFile, ParsedFile, ImportEdge } from './types.js';
+import { parseNonTsFiles } from './lang-parser.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -69,8 +70,11 @@ function resolveImportTo(specifier: string, fromFile: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Parse a collection of source files using ts-morph and return enriched
- * `ParsedFile` objects containing AST-derived metadata.
+ * Parse a collection of source files and return enriched `ParsedFile` objects.
+ *
+ * TypeScript and JavaScript files are parsed with ts-morph for full AST
+ * metadata. All other supported languages (Python, Go, Rust, Java, C, C++,
+ * C#) are handled by the regex-based lang-parser.
  *
  * A fresh ts-morph `Project` is created per call so that each audit run is
  * isolated and does not retain state between invocations.
@@ -79,6 +83,14 @@ function resolveImportTo(specifier: string, fromFile: string): string {
  */
 export function parseFiles(sourceFiles: ZariaSourceFile[]): ParsedFile[] {
   if (sourceFiles.length === 0) return [];
+
+  // Split files by whether ts-morph can handle them
+  const tsJsFiles = sourceFiles.filter(
+    (sf) => sf.language === 'typescript' || sf.language === 'javascript',
+  );
+  const otherFiles = sourceFiles.filter(
+    (sf) => sf.language !== 'typescript' && sf.language !== 'javascript',
+  );
 
   // Create an in-memory ts-morph project (no real tsconfig needed)
   const project = new Project({
@@ -92,8 +104,8 @@ export function parseFiles(sourceFiles: ZariaSourceFile[]): ParsedFile[] {
     },
   });
 
-  // Add all discovered source files
-  for (const sf of sourceFiles) {
+  // Add only TS/JS source files to the ts-morph project
+  for (const sf of tsJsFiles) {
     try {
       project.addSourceFileAtPath(sf.path);
     } catch {
@@ -103,7 +115,7 @@ export function parseFiles(sourceFiles: ZariaSourceFile[]): ParsedFile[] {
 
   const parsed: ParsedFile[] = [];
 
-  for (const sf of sourceFiles) {
+  for (const sf of tsJsFiles) {
     const tsFile = project.getSourceFile(sf.path);
     if (!tsFile) continue;
 
@@ -172,5 +184,8 @@ export function parseFiles(sourceFiles: ZariaSourceFile[]): ParsedFile[] {
     });
   }
 
-  return parsed;
+  // Parse non-TS/JS files with the regex-based lang-parser and merge results
+  const otherParsed = parseNonTsFiles(otherFiles);
+
+  return [...parsed, ...otherParsed];
 }

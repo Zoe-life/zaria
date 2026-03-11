@@ -1,15 +1,18 @@
 /**
- * File traversal engine — Phase 4.1
+ * File traversal engine — Phase 4.1 / Phase 15
  *
  * Recursively walks a project directory and returns SourceFile descriptors
- * for every TypeScript and JavaScript file, honouring both a hard-coded
- * default ignore list and the caller-supplied `ignorePaths` array from the
- * Zaria config.
+ * for every recognised source file, honouring both a hard-coded default
+ * ignore list and the caller-supplied `ignorePaths` array from the Zaria
+ * config.
+ *
+ * Supported languages: TypeScript, JavaScript, Python, Go, Rust, Java,
+ * C, C++, C#.
  */
 
 import { readdirSync, lstatSync, realpathSync } from 'fs';
 import { join, extname, relative } from 'path';
-import type { SourceFile } from './types.js';
+import type { SourceFile, SupportedLanguage } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -20,6 +23,25 @@ const TS_EXTENSIONS = new Set(['.ts', '.tsx']);
 
 /** File extensions considered JavaScript source. */
 const JS_EXTENSIONS = new Set(['.js', '.jsx', '.mjs', '.cjs']);
+
+/** File extensions for other supported languages. */
+const OTHER_EXTENSIONS = new Map<string, SupportedLanguage>([
+  ['.py', 'python'],
+  ['.go', 'go'],
+  ['.rs', 'rust'],
+  ['.java', 'java'],
+  // C
+  ['.c', 'c'],
+  ['.h', 'c'],
+  // C++
+  ['.cpp', 'cpp'],
+  ['.cxx', 'cpp'],
+  ['.cc', 'cpp'],
+  ['.hpp', 'cpp'],
+  ['.hxx', 'cpp'],
+  // C#
+  ['.cs', 'csharp'],
+]);
 
 /** Directory / path segments that are always skipped. */
 const DEFAULT_IGNORE = new Set([
@@ -43,10 +65,10 @@ const DEFAULT_IGNORE = new Set([
 // Helpers
 // ---------------------------------------------------------------------------
 
-function detectLanguage(ext: string): SourceFile['language'] {
+function detectLanguage(ext: string): SupportedLanguage {
   if (TS_EXTENSIONS.has(ext)) return 'typescript';
   if (JS_EXTENSIONS.has(ext)) return 'javascript';
-  return 'unknown';
+  return OTHER_EXTENSIONS.get(ext) ?? 'unknown';
 }
 
 /**
@@ -138,7 +160,7 @@ export function traverseFiles(projectRoot: string, ignorePaths: string[] = []): 
       } else if (lstat.isFile()) {
         const ext = extname(entry).toLowerCase();
         const language = detectLanguage(ext);
-        if (language === 'unknown') continue; // only include TS/JS files
+        if (language === 'unknown') continue; // only include recognised languages
 
         results.push({
           path: fullPath,

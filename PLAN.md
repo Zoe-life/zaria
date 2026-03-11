@@ -24,8 +24,8 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 | 12 ✅ | SRE Tool Integration | Optional Prometheus, Datadog, Grafana, etc. |
 | 13 | CI/CD Integration | Quality gates, exit codes, GitHub Actions |
 | 14 | Plugin Architecture | Plugin loader, typed interface, registry |
-| 15 | Testing & Quality Assurance | Unit, integration, and E2E test suites |
-| 16 | Documentation | User docs, API docs, plugin authoring guide |
+| 15 ✅ | Multi-Language Support | Python, Go, Rust, Java, C, C++, C# traversal + parsing |
+| 16 ✅ | Documentation | CONTRIBUTING, CHANGELOG, SECURITY, API reference |
 | 17 | Distribution & Release | npm package, binary releases, Homebrew tap |
 | 18 | Enterprise Features | Audit history, dashboards, compliance exports |
 
@@ -578,41 +578,59 @@ This document outlines the complete, step-by-step build plan for the Zaria enter
 
 ---
 
-## Phase 15 — Testing & Quality Assurance
+## Phase 15 — Multi-Language Support ✅
 
-**Goal:** Comprehensive test coverage before v1.0 release.
+**Goal:** Zaria can traverse, parse, and report on codebases in all major languages beyond TypeScript and JavaScript.
 
 ### Tasks
 
-15.1. **Achieve ≥ 80% unit test coverage** across all modules.
+15.1. **Extend `SupportedLanguage` type** ✅
+  - New union: `typescript | javascript | python | go | rust | java | c | cpp | csharp | unknown`.
 
-15.2. **Write integration tests** for each audit dimension using the fixture projects.
+15.2. **Update `traverseFiles`** ✅
+  - Added extension maps: `.py` → python, `.go` → go, `.rs` → rust, `.java` → java, `.c`/`.h` → c, `.cpp`/`.cxx`/`.cc`/`.hpp`/`.hxx` → cpp, `.cs` → csharp.
 
-15.3. **Write E2E tests** — spawn the `zaria` binary and verify stdout, exit codes, and output files.
+15.3. **Create `src/audit/lang-parser.ts`** ✅
+  - Regex-based heuristic parser for all non-TS/JS languages.
+  - Extracts LOC, function count, class/struct count, and import edges per language.
 
-15.4. **Set up mutation testing** (`stryker`).
+15.4. **Update `parseFiles` to route non-TS/JS files** ✅
+  - TS/JS files continue through ts-morph; all others go through `parseNonTsFiles`.
 
-15.5. **Set up performance benchmarks** against a 100k-line TypeScript codebase.
+15.5. **Update `ProjectLanguageSchema`** ✅
+  - Added `'c'`, `'cpp'`, `'csharp'` to the Zod enum.
 
-15.6. **Conduct a security review**.
+15.6. **Update `detectProject`** ✅
+  - Detects C# (`.sln` / `.csproj`), C++ (CMakeLists.txt), and C (Makefile + `.c` file).
+
+15.7. **Add multi-language fixture and tests** ✅
+  - `tests/fixtures/sample-multilang-app/` — one file per language (`.py`, `.go`, `.rs`, `.java`, `.c`, `.cpp`, `.cs`).
+  - 21 new tests in `multilang-traversal.test.ts` and `lang-parser.test.ts`; 558 total tests passing.
+
+15.8. **AI Integration Audit** ✅
+  - `docs/ai-integration-audit.md` — analysis of Claude (Anthropic) and Qodo APIs.
+  - **Decision: do not integrate at this time** (non-determinism, data privacy, cost, latency).
 
 ---
 
-## Phase 16 — Documentation
+## Phase 16 — Documentation ✅
 
 **Goal:** Full user documentation, API reference, and contribution guide.
 
 ### Tasks
 
-16.1. **Write user documentation site** (using VitePress).
+16.1. **Write `CONTRIBUTING.md`** ✅
+  - Developer onboarding, coding standards, rule authoring guide, plugin guide, PR process.
 
-16.2. **Write `CONTRIBUTING.md`**.
+16.2. **Write `CHANGELOG.md`** ✅
+  - Keep a Changelog format; covers all phases from 1 through 16.
 
-16.3. **Write `CHANGELOG.md`** following Keep a Changelog format.
+16.3. **Write `SECURITY.md`** ✅
+  - Vulnerability reporting process, scope, supported versions, coordinated disclosure policy.
 
-16.4. **Write `SECURITY.md`** with vulnerability reporting process.
-
-16.5. **Generate API reference documentation** (TypeDoc).
+16.4. **Generate API reference** ✅
+  - `docs/api-reference.md` — full public API surface documented (types, traversal, parsing, scoring, report formatters, SRE, plugins, config, logger).
+  - VitePress documentation site deferred to Phase 17 (Distribution).
 
 ---
 

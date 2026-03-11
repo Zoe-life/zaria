@@ -1,4 +1,4 @@
-import { readFile, access } from 'fs/promises';
+import { readFile, access, readdir } from 'fs/promises';
 import { join } from 'path';
 import type { ProjectType, ProjectLanguage } from './schema.js';
 
@@ -20,6 +20,21 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 /**
+ * Returns `true` when at least one file in `dir` (non-recursive) matches
+ * the simple glob suffix pattern, e.g. `*.sln` or `*.cpp`.
+ */
+async function globFirstMatch(dir: string, pattern: string): Promise<boolean> {
+  const suffix = pattern.startsWith('*.') ? pattern.slice(1) : pattern;
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch {
+    return false;
+  }
+  return entries.some((e) => e.endsWith(suffix));
+}
+
+/**
  * Inspect the directory at `dir` and return a best-guess project type and
  * primary language. Falls back to `{ type: 'web', language: 'typescript' }`.
  */
@@ -36,6 +51,14 @@ export async function detectProject(dir: string): Promise<DetectedProject> {
   const hasSetupPy = await fileExists(join(dir, 'setup.py'));
   const hasPomXml = await fileExists(join(dir, 'pom.xml'));
   const hasPackageJson = await fileExists(join(dir, 'package.json'));
+  // C# — Visual Studio solution or project file
+  const hasSlnFile =
+    (await globFirstMatch(dir, '*.sln')) || (await globFirstMatch(dir, '*.csproj'));
+  // C++ — CMakeLists.txt or Makefile alongside .cpp files
+  const hasCMake = await fileExists(join(dir, 'CMakeLists.txt'));
+  const hasMakefile = await fileExists(join(dir, 'Makefile'));
+  const hasCppFile = await globFirstMatch(dir, '*.cpp');
+  const hasCFile = await globFirstMatch(dir, '*.c');
 
   if (hasGoMod) {
     language = 'go';
@@ -45,6 +68,12 @@ export async function detectProject(dir: string): Promise<DetectedProject> {
     language = 'python';
   } else if (hasPomXml) {
     language = 'java';
+  } else if (hasSlnFile) {
+    language = 'csharp';
+  } else if (hasCMake || (hasMakefile && hasCppFile)) {
+    language = 'cpp';
+  } else if (hasMakefile && hasCFile) {
+    language = 'c';
   } else if (hasPackageJson) {
     // TypeScript if tsconfig.json is present, otherwise JavaScript.
     const hasTsConfig = await fileExists(join(dir, 'tsconfig.json'));

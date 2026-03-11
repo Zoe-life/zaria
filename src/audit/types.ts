@@ -14,12 +14,29 @@ export type Severity = 'critical' | 'high' | 'medium' | 'low';
 // Phase 4 — Static Analysis Foundation
 // ---------------------------------------------------------------------------
 
+/**
+ * All source-language identifiers Zaria understands.
+ * TypeScript and JavaScript are analysed with full AST (ts-morph).
+ * All other languages use regex-based heuristics for LOC / function / class counts.
+ */
+export type SupportedLanguage =
+  | 'typescript'
+  | 'javascript'
+  | 'python'
+  | 'go'
+  | 'rust'
+  | 'java'
+  | 'c'
+  | 'cpp'
+  | 'csharp'
+  | 'unknown';
+
 /** A source file discovered during traversal. */
 export interface SourceFile {
   /** Absolute path to the file. */
   path: string;
   /** Detected language from file extension. */
-  language: 'typescript' | 'javascript' | 'unknown';
+  language: SupportedLanguage;
   /** File size in bytes. */
   size: number;
   /** Last-modified timestamp. */
