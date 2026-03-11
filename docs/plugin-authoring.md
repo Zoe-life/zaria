@@ -12,10 +12,24 @@ built-in dimensions.
 
 Official plugins published by the Zaria team:
 
+**Framework & ORM plugins**
+
 | Package | Description |
 |---------|-------------|
 | `zaria-plugin-nextjs` | Next.js–specific rules (image optimisation, data fetching, error boundaries) |
 | `zaria-plugin-prisma` | Prisma ORM rules (singleton pattern, connection leaks, SQL injection guards) |
+
+**Language plugins** (extend Zaria's multi-language support with language-specific best-practice rules)
+
+| Package | Language | Rules |
+|---------|----------|-------|
+| `zaria-plugin-python` | Python | PY001 print() vs logging, PY002 bare except, PY003 mutable defaults |
+| `zaria-plugin-go` | Go | GO001 ignored errors, GO002 panic() in production, GO003 fmt.Print* vs logger |
+| `zaria-plugin-rust` | Rust | RUST001 .unwrap() panics, RUST002 unsafe blocks, RUST003 .clone() allocation |
+| `zaria-plugin-java` | Java | JAVA001 System.out vs logger, JAVA002 empty catch, JAVA003 broad Exception catch |
+| `zaria-plugin-c` | C | C001 gets() overflow, C002 sprintf() bounds, C003 malloc NULL check |
+| `zaria-plugin-cpp` | C++ | CPP001 using namespace in headers, CPP002 raw new/delete, CPP003 printf vs iostream |
+| `zaria-plugin-csharp` | C# | CS001 Console.Write vs ILogger, CS002 empty catch, CS003 Thread.Sleep in async |
 
 ---
 
@@ -332,6 +346,191 @@ describe('zaria-plugin-myplugin', () => {
     expect(rule.check(ctx)).toHaveLength(0);
   });
 });
+```
+
+---
+
+## Using Plugins on GitHub
+
+### GitHub Actions — quality gate with language plugins
+
+Add the official language plugins to your workflow to enforce language-specific
+best practices in CI:
+
+```yaml
+# .github/workflows/zaria.yml
+name: Zaria Code Audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Run Zaria with language plugins for a Python + Go mixed project
+      - uses: Zoe-life/zaria@main
+        with:
+          path: '.'
+          threshold: '75'
+          plugins: 'zaria-plugin-python,zaria-plugin-go'
+          format: 'sarif'
+          # Write results to a file so the upload step can read them
+        id: audit
+
+      # Optional: upload SARIF to GitHub Code Scanning
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: zaria-report.sarif
+```
+
+The SARIF output integrates directly with **GitHub Code Scanning**:
+
+- Findings appear as **annotations on pull request diffs** — reviewers see the
+  exact line with the issue highlighted.
+- The **Security tab** (`repository → Security → Code scanning`) aggregates all
+  findings across runs and tracks when they were introduced and fixed.
+- Findings with severity `critical` or `high` can be configured to **block
+  merges** via branch protection rules (`Settings → Branches → Require status
+  checks`).
+
+#### Generating the SARIF file explicitly
+
+If you prefer to control the file path:
+
+```yaml
+- name: Run Zaria (SARIF)
+  run: |
+    npm install -g zaria zaria-plugin-python zaria-plugin-go
+    zaria audit . \
+      --plugins zaria-plugin-python,zaria-plugin-go \
+      --output sarif \
+      --file zaria-report.sarif \
+      --threshold 75
+
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: zaria-report.sarif
+    category: zaria
+```
+
+#### Per-language plugin selection
+
+Install only the plugins relevant to your repository's language stack to keep
+CI fast:
+
+| Language(s) in repo | Recommended plugins |
+|---------------------|---------------------|
+| Python | `zaria-plugin-python` |
+| Go | `zaria-plugin-go` |
+| Rust | `zaria-plugin-rust` |
+| Java | `zaria-plugin-java` |
+| C | `zaria-plugin-c` |
+| C++ | `zaria-plugin-cpp` |
+| C# / .NET | `zaria-plugin-csharp` |
+| Next.js | `zaria-plugin-nextjs` |
+| Prisma ORM | `zaria-plugin-prisma` |
+| TypeScript + Next.js + Prisma | `zaria-plugin-nextjs,zaria-plugin-prisma` |
+
+---
+
+## Using Plugins in VS Code
+
+### SARIF Viewer extension
+
+The **SARIF Viewer** extension (`MS-SarifVSCode.sarif-viewer`) renders any
+SARIF file produced by Zaria inside VS Code, showing findings as:
+
+- **Problems panel** entries with file, line, severity, and message.
+- **Inline editor decorations** — the affected line is underlined and a hover
+  tooltip shows the rule description and recommendation.
+- **Explorer tree** — findings grouped by rule ID and severity.
+
+**Setup:**
+
+1. Install the extension:
+   ```
+   ext install MS-SarifVSCode.sarif-viewer
+   ```
+
+2. Generate a SARIF report for your project:
+   ```bash
+   # Install Zaria and the plugins for your language stack
+   npm install --save-dev zaria zaria-plugin-python zaria-plugin-go
+
+   # Run the audit and write SARIF output
+   npx zaria audit . \
+     --plugins zaria-plugin-python,zaria-plugin-go \
+     --output sarif \
+     --file .zaria/report.sarif
+   ```
+
+3. Open the SARIF file in VS Code:
+   - Open the Command Palette (`Ctrl+Shift+P` / `⌘+Shift+P`).
+   - Run **"SARIF: Show Panel"** or simply open the `.sarif` file — VS Code
+     opens the SARIF Viewer automatically.
+
+4. Optional — add `.zaria/` to `.gitignore` so the SARIF file is not committed:
+   ```
+   # .gitignore
+   .zaria/
+   ```
+
+### Automating the report on save (VS Code task)
+
+Add a VS Code task that regenerates the SARIF report whenever you trigger it:
+
+```jsonc
+// .vscode/tasks.json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Zaria: audit with plugins",
+      "type": "shell",
+      "command": "npx zaria audit . --plugins zaria-plugin-python,zaria-plugin-go --output sarif --file .zaria/report.sarif",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
+```
+
+Run it with `Terminal → Run Task → Zaria: audit with plugins`.
+
+### Configuring plugins in `.zariarc.yml` (project-wide)
+
+Rather than passing `--plugins` on every invocation, declare plugins in the
+project configuration file so both the CLI and the VS Code task pick them up
+automatically:
+
+```yaml
+# .zariarc.yml
+version: 1
+
+plugins:
+  - zaria-plugin-python   # Python best-practice rules
+  - zaria-plugin-go       # Go error-handling and logging rules
+
+thresholds:
+  overall: 75
+  performance: 80
+```
+
+With this file in place, simply run:
+
+```bash
+npx zaria audit .            # plugins are loaded automatically
+npx zaria audit . -o sarif -f .zaria/report.sarif
 ```
 
 ---
